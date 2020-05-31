@@ -1,8 +1,8 @@
 
   {
   "schemaVersion": 1,
-  "label": "coverage",
-  "message": "50.01%",
-  "color": "green"
+  "label": "lcov",
+  "message": "37.08%",
+  "color": "red"
   }
 
