@@ -2,7 +2,7 @@
   {
   "schemaVersion": 1,
   "label": "lcov",
-  "message": "68.77%",
-  "color": "yellow"
+  "message": "%",
+  "color": "red"
   }
 
