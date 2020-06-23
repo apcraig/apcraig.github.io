@@ -1,0 +1,862 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 200623-231729:0a37e99f7c:1:quick - columnphysics/icepack_orbital.F90</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">columnphysics</a> - icepack_orbital.F90<span style="font-size: 80%;"> (source / <a href="icepack_orbital.F90.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">200623-231729:0a37e99f7c:1:quick</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">84</td>
+            <td class="headerCovTableEntry">175</td>
+            <td class="headerCovTableEntryLo">48.00 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-06-23 17:19:27</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryMed">80.00 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : !=======================================================================</a>
+<a name="2"><span class="lineNum">       2 </span>            : </a>
+<a name="3"><span class="lineNum">       3 </span>            : ! Orbital parameters computed from date</a>
+<a name="4"><span class="lineNum">       4 </span>            : ! author:  Bruce P. Briegleb, NCAR </a>
+<a name="5"><span class="lineNum">       5 </span>            : !</a>
+<a name="6"><span class="lineNum">       6 </span>            : ! 2006 ECH: Converted to free source form (F90)</a>
+<a name="7"><span class="lineNum">       7 </span>            : ! 2014 ECH: Moved routines from csm_share/shr_orb_mod.F90</a>
+<a name="8"><span class="lineNum">       8 </span>            : </a>
+<a name="9"><span class="lineNum">       9 </span>            :       module icepack_orbital</a>
+<a name="10"><span class="lineNum">      10 </span>            : </a>
+<a name="11"><span class="lineNum">      11 </span>            :       use icepack_kinds</a>
+<a name="12"><span class="lineNum">      12 </span>            :       use icepack_parameters, only: c2, p5, pi, secday</a>
+<a name="13"><span class="lineNum">      13 </span>            :       use icepack_warnings, only: warnstr, icepack_warnings_add</a>
+<a name="14"><span class="lineNum">      14 </span>            :       use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted</a>
+<a name="15"><span class="lineNum">      15 </span>            : </a>
+<a name="16"><span class="lineNum">      16 </span>            :       implicit none</a>
+<a name="17"><span class="lineNum">      17 </span>            :       private</a>
+<a name="18"><span class="lineNum">      18 </span>            :       public :: compute_coszen, &amp;</a>
+<a name="19"><span class="lineNum">      19 </span>            :                 icepack_init_orbit, &amp;</a>
+<a name="20"><span class="lineNum">      20 </span>            :                 icepack_query_orbit</a>
+<a name="21"><span class="lineNum">      21 </span>            : </a>
+<a name="22"><span class="lineNum">      22 </span>            :       ! orbital parameters</a>
+<a name="23"><span class="lineNum">      23 </span>            :       integer (kind=int_kind)  :: iyear_AD  ! Year to calculate orbit for</a>
+<a name="24"><span class="lineNum">      24 </span>            :       real(kind=dbl_kind) :: eccen  ! Earth's orbital eccentricity</a>
+<a name="25"><span class="lineNum">      25 </span>            :       real(kind=dbl_kind) :: obliqr ! Earth's obliquity in radians</a>
+<a name="26"><span class="lineNum">      26 </span>            :       real(kind=dbl_kind) :: lambm0 ! Mean longitude of perihelion at the</a>
+<a name="27"><span class="lineNum">      27 </span>            :                                            ! vernal equinox (radians)</a>
+<a name="28"><span class="lineNum">      28 </span>            :       real(kind=dbl_kind) :: mvelpp ! Earth's moving vernal equinox longitude</a>
+<a name="29"><span class="lineNum">      29 </span>            :                                            ! of perihelion + pi (radians)</a>
+<a name="30"><span class="lineNum">      30 </span>            :       real(kind=dbl_kind) :: obliq  ! obliquity in degrees</a>
+<a name="31"><span class="lineNum">      31 </span>            :       real(kind=dbl_kind) :: mvelp  ! moving vernal equinox long</a>
+<a name="32"><span class="lineNum">      32 </span>            :       real(kind=dbl_kind) :: decln  ! solar declination angle in radians</a>
+<a name="33"><span class="lineNum">      33 </span>            :       real(kind=dbl_kind) :: eccf   ! earth orbit eccentricity factor</a>
+<a name="34"><span class="lineNum">      34 </span>            :       logical(kind=log_kind) :: log_print ! Flags print of status/error</a>
+<a name="35"><span class="lineNum">      35 </span>            : </a>
+<a name="36"><span class="lineNum">      36 </span>            : !=======================================================================</a>
+<a name="37"><span class="lineNum">      37 </span>            :  </a>
+<a name="38"><span class="lineNum">      38 </span>            :       contains</a>
+<a name="39"><span class="lineNum">      39 </span>            : </a>
+<a name="40"><span class="lineNum">      40 </span>            : !=======================================================================</a>
+<a name="41"><span class="lineNum">      41 </span>            : </a>
+<a name="42"><span class="lineNum">      42 </span>            : !autodocument_start icepack_init_orbit</a>
+<a name="43"><span class="lineNum">      43 </span>            : ! Compute orbital parameters for the specified date.</a>
+<a name="44"><span class="lineNum">      44 </span>            : </a>
+<a name="45"><span class="lineNum">      45 </span><span class="lineCov">         16 :       subroutine icepack_init_orbit(iyear_AD_in, eccen_in, obliqr_in, &amp;</span></a>
+<a name="46"><span class="lineNum">      46 </span>            :          lambm0_in, mvelpp_in, obliq_in, mvelp_in, decln_in, eccf_in, &amp;</a>
+<a name="47"><span class="lineNum">      47 </span>            :          log_print_in)</a>
+<a name="48"><span class="lineNum">      48 </span>            : </a>
+<a name="49"><span class="lineNum">      49 </span>            :       integer(kind=int_kind), optional, intent(in) :: iyear_AD_in  ! Year to calculate orbit for</a>
+<a name="50"><span class="lineNum">      50 </span>            :       real(kind=dbl_kind), optional, intent(in) :: eccen_in  ! Earth's orbital eccentricity</a>
+<a name="51"><span class="lineNum">      51 </span>            :       real(kind=dbl_kind), optional, intent(in) :: obliqr_in ! Earth's obliquity in radians</a>
+<a name="52"><span class="lineNum">      52 </span>            :       real(kind=dbl_kind), optional, intent(in) :: lambm0_in ! Mean longitude of perihelion at the</a>
+<a name="53"><span class="lineNum">      53 </span>            :                                                              ! vernal equinox (radians)</a>
+<a name="54"><span class="lineNum">      54 </span>            :       real(kind=dbl_kind), optional, intent(in) :: mvelpp_in ! Earth's moving vernal equinox longitude</a>
+<a name="55"><span class="lineNum">      55 </span>            :                                                              ! of perihelion + pi (radians)</a>
+<a name="56"><span class="lineNum">      56 </span>            :       real(kind=dbl_kind), optional, intent(in) :: obliq_in  ! obliquity in degrees</a>
+<a name="57"><span class="lineNum">      57 </span>            :       real(kind=dbl_kind), optional, intent(in) :: mvelp_in  ! moving vernal equinox long</a>
+<a name="58"><span class="lineNum">      58 </span>            :       real(kind=dbl_kind), optional, intent(in) :: decln_in  ! solar declination angle in radians</a>
+<a name="59"><span class="lineNum">      59 </span>            :       real(kind=dbl_kind), optional, intent(in) :: eccf_in   ! earth orbit eccentricity factor</a>
+<a name="60"><span class="lineNum">      60 </span>            :       logical(kind=log_kind), optional, intent(in) :: log_print_in ! Flags print of status/error</a>
+<a name="61"><span class="lineNum">      61 </span>            : </a>
+<a name="62"><span class="lineNum">      62 </span>            : !autodocument_end</a>
+<a name="63"><span class="lineNum">      63 </span>            : </a>
+<a name="64"><span class="lineNum">      64 </span>            :       character(len=*),parameter :: subname='(icepack_init_orbit)'</a>
+<a name="65"><span class="lineNum">      65 </span>            : </a>
+<a name="66"><span class="lineNum">      66 </span>            :       !call icepack_warnings_add(subname//'  ')</a>
+<a name="67"><span class="lineNum">      67 </span><span class="lineCov">         16 :       iyear_AD  = 1950</span></a>
+<a name="68"><span class="lineNum">      68 </span><span class="lineCov">         16 :       log_print = .false.   ! if true, write out orbital parameters</span></a>
+<a name="69"><span class="lineNum">      69 </span>            : </a>
+<a name="70"><span class="lineNum">      70 </span>            : #ifndef CESMCOUPLED</a>
+<a name="71"><span class="lineNum">      71 </span>            :       call shr_orb_params( iyear_AD, eccen , obliq , mvelp    , &amp;</a>
+<a name="72"><span class="lineNum">      72 </span><span class="lineCov">         16 :                            obliqr  , lambm0, mvelpp, log_print)</span></a>
+<a name="73"><span class="lineNum">      73 </span><span class="lineCov">         16 :       if (icepack_warnings_aborted(subname)) return</span></a>
+<a name="74"><span class="lineNum">      74 </span>            : #endif</a>
+<a name="75"><span class="lineNum">      75 </span>            : </a>
+<a name="76"><span class="lineNum">      76 </span><span class="lineCov">         16 :       if (present(iyear_AD_in)) iyear_AD = iyear_AD_in</span></a>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">         16 :       if (present(eccen_in)) eccen = eccen_in</span></a>
+<a name="78"><span class="lineNum">      78 </span><span class="lineCov">         16 :       if (present(obliqr_in)) obliqr = obliqr_in</span></a>
+<a name="79"><span class="lineNum">      79 </span><span class="lineCov">         16 :       if (present(lambm0_in)) lambm0 = lambm0_in</span></a>
+<a name="80"><span class="lineNum">      80 </span><span class="lineCov">         16 :       if (present(mvelpp_in)) mvelpp = mvelpp_in</span></a>
+<a name="81"><span class="lineNum">      81 </span><span class="lineCov">         16 :       if (present(obliq_in)) obliq = obliq_in</span></a>
+<a name="82"><span class="lineNum">      82 </span><span class="lineCov">         16 :       if (present(mvelp_in)) mvelp = mvelp_in</span></a>
+<a name="83"><span class="lineNum">      83 </span><span class="lineCov">         16 :       if (present(decln_in)) decln = decln_in</span></a>
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">         16 :       if (present(eccf_in)) eccf = eccf_in</span></a>
+<a name="85"><span class="lineNum">      85 </span><span class="lineCov">         16 :       if (present(log_print_in)) log_print = log_print_in</span></a>
+<a name="86"><span class="lineNum">      86 </span>            : </a>
+<a name="87"><span class="lineNum">      87 </span>            :       end subroutine icepack_init_orbit</a>
+<a name="88"><span class="lineNum">      88 </span>            :  </a>
+<a name="89"><span class="lineNum">      89 </span>            : !=======================================================================</a>
+<a name="90"><span class="lineNum">      90 </span>            : </a>
+<a name="91"><span class="lineNum">      91 </span>            : !autodocument_start icepack_query_orbit</a>
+<a name="92"><span class="lineNum">      92 </span>            : ! Compute orbital parameters for the specified date.</a>
+<a name="93"><span class="lineNum">      93 </span>            : </a>
+<a name="94"><span class="lineNum">      94 </span><span class="lineNoCov">          0 :       subroutine icepack_query_orbit(iyear_AD_out, eccen_out, obliqr_out, &amp;</span></a>
+<a name="95"><span class="lineNum">      95 </span>            :          lambm0_out, mvelpp_out, obliq_out, mvelp_out, decln_out, eccf_out, &amp;</a>
+<a name="96"><span class="lineNum">      96 </span>            :          log_print_out)</a>
+<a name="97"><span class="lineNum">      97 </span>            : </a>
+<a name="98"><span class="lineNum">      98 </span>            :       integer(kind=int_kind), optional, intent(out) :: iyear_AD_out  ! Year to calculate orbit for</a>
+<a name="99"><span class="lineNum">      99 </span>            :       real(kind=dbl_kind), optional, intent(out) :: eccen_out  ! Earth's orbital eccentricity</a>
+<a name="100"><span class="lineNum">     100 </span>            :       real(kind=dbl_kind), optional, intent(out) :: obliqr_out ! Earth's obliquity in radians</a>
+<a name="101"><span class="lineNum">     101 </span>            :       real(kind=dbl_kind), optional, intent(out) :: lambm0_out ! Mean longitude of perihelion at the</a>
+<a name="102"><span class="lineNum">     102 </span>            :                                                              ! vernal equinox (radians)</a>
+<a name="103"><span class="lineNum">     103 </span>            :       real(kind=dbl_kind), optional, intent(out) :: mvelpp_out ! Earth's moving vernal equinox longitude</a>
+<a name="104"><span class="lineNum">     104 </span>            :                                                              ! of perihelion + pi (radians)</a>
+<a name="105"><span class="lineNum">     105 </span>            :       real(kind=dbl_kind), optional, intent(out) :: obliq_out  ! obliquity in degrees</a>
+<a name="106"><span class="lineNum">     106 </span>            :       real(kind=dbl_kind), optional, intent(out) :: mvelp_out  ! moving vernal equinox long</a>
+<a name="107"><span class="lineNum">     107 </span>            :       real(kind=dbl_kind), optional, intent(out) :: decln_out  ! solar declination angle in radians</a>
+<a name="108"><span class="lineNum">     108 </span>            :       real(kind=dbl_kind), optional, intent(out) :: eccf_out   ! earth orbit eccentricity factor</a>
+<a name="109"><span class="lineNum">     109 </span>            :       logical(kind=log_kind), optional, intent(out) :: log_print_out ! Flags print of status/error</a>
+<a name="110"><span class="lineNum">     110 </span>            : </a>
+<a name="111"><span class="lineNum">     111 </span>            : !autodocument_end</a>
+<a name="112"><span class="lineNum">     112 </span>            : </a>
+<a name="113"><span class="lineNum">     113 </span>            :       character(len=*),parameter :: subname='(icepack_query_orbit)'</a>
+<a name="114"><span class="lineNum">     114 </span>            : </a>
+<a name="115"><span class="lineNum">     115 </span>            :       !call icepack_warnings_add(subname//'  ')</a>
+<a name="116"><span class="lineNum">     116 </span><span class="lineNoCov">          0 :       iyear_AD  = 1950</span></a>
+<a name="117"><span class="lineNum">     117 </span><span class="lineNoCov">          0 :       log_print = .false.   ! if true, write out orbital parameters</span></a>
+<a name="118"><span class="lineNum">     118 </span>            : </a>
+<a name="119"><span class="lineNum">     119 </span>            : #ifndef CESMCOUPLED</a>
+<a name="120"><span class="lineNum">     120 </span>            :       call shr_orb_params( iyear_AD, eccen , obliq , mvelp    , &amp;</a>
+<a name="121"><span class="lineNum">     121 </span><span class="lineNoCov">          0 :                            obliqr  , lambm0, mvelpp, log_print)</span></a>
+<a name="122"><span class="lineNum">     122 </span><span class="lineNoCov">          0 :       if (icepack_warnings_aborted(subname)) return</span></a>
+<a name="123"><span class="lineNum">     123 </span>            : #endif</a>
+<a name="124"><span class="lineNum">     124 </span>            : </a>
+<a name="125"><span class="lineNum">     125 </span><span class="lineNoCov">          0 :       if (present(iyear_AD_out)) iyear_AD_out = iyear_AD</span></a>
+<a name="126"><span class="lineNum">     126 </span><span class="lineNoCov">          0 :       if (present(eccen_out)) eccen_out = eccen</span></a>
+<a name="127"><span class="lineNum">     127 </span><span class="lineNoCov">          0 :       if (present(obliqr_out)) obliqr_out = obliqr</span></a>
+<a name="128"><span class="lineNum">     128 </span><span class="lineNoCov">          0 :       if (present(lambm0_out)) lambm0_out = lambm0</span></a>
+<a name="129"><span class="lineNum">     129 </span><span class="lineNoCov">          0 :       if (present(mvelpp_out)) mvelpp_out = mvelpp</span></a>
+<a name="130"><span class="lineNum">     130 </span><span class="lineNoCov">          0 :       if (present(obliq_out)) obliq_out = obliq</span></a>
+<a name="131"><span class="lineNum">     131 </span><span class="lineNoCov">          0 :       if (present(mvelp_out)) mvelp_out = mvelp</span></a>
+<a name="132"><span class="lineNum">     132 </span><span class="lineNoCov">          0 :       if (present(decln_out)) decln_out = decln</span></a>
+<a name="133"><span class="lineNum">     133 </span><span class="lineNoCov">          0 :       if (present(eccf_out)) eccf_out = eccf</span></a>
+<a name="134"><span class="lineNum">     134 </span><span class="lineNoCov">          0 :       if (present(log_print_out)) log_print_out = log_print</span></a>
+<a name="135"><span class="lineNum">     135 </span>            : </a>
+<a name="136"><span class="lineNum">     136 </span>            :       end subroutine icepack_query_orbit</a>
+<a name="137"><span class="lineNum">     137 </span>            :  </a>
+<a name="138"><span class="lineNum">     138 </span>            : !=======================================================================</a>
+<a name="139"><span class="lineNum">     139 </span>            : </a>
+<a name="140"><span class="lineNum">     140 </span>            : ! Uses orbital and lat/lon info to compute cosine solar zenith angle</a>
+<a name="141"><span class="lineNum">     141 </span>            : ! for the specified date.</a>
+<a name="142"><span class="lineNum">     142 </span>            : !</a>
+<a name="143"><span class="lineNum">     143 </span>            : ! author:  Bruce P. Briegleb, NCAR </a>
+<a name="144"><span class="lineNum">     144 </span>            : </a>
+<a name="145"><span class="lineNum">     145 </span><span class="lineCov">      98688 :       subroutine compute_coszen (tlat,          tlon,        &amp;</span></a>
+<a name="146"><span class="lineNum">     146 </span>            :                                  yday,  sec, coszen,     &amp;</a>
+<a name="147"><span class="lineNum">     147 </span>            :                                  days_per_year, nextsw_cday, &amp;</a>
+<a name="148"><span class="lineNum">     148 </span><span class="lineNoCov">          0 :                                  calendar_type)</span></a>
+<a name="149"><span class="lineNum">     149 </span>            : </a>
+<a name="150"><span class="lineNum">     150 </span>            : #ifdef CESMCOUPLED</a>
+<a name="151"><span class="lineNum">     151 </span>            :       use shr_orb_mod, only: shr_orb_decl</a>
+<a name="152"><span class="lineNum">     152 </span>            : #endif</a>
+<a name="153"><span class="lineNum">     153 </span>            :  </a>
+<a name="154"><span class="lineNum">     154 </span>            :       real (kind=dbl_kind), intent(in) :: &amp;</a>
+<a name="155"><span class="lineNum">     155 </span>            :          tlat, tlon          ! latitude and longitude (radians)</a>
+<a name="156"><span class="lineNum">     156 </span>            : </a>
+<a name="157"><span class="lineNum">     157 </span>            :       integer (kind=int_kind), intent(in) :: &amp;</a>
+<a name="158"><span class="lineNum">     158 </span>            :          sec                 ! elapsed seconds into date</a>
+<a name="159"><span class="lineNum">     159 </span>            : </a>
+<a name="160"><span class="lineNum">     160 </span>            :       real (kind=dbl_kind), intent(in) :: &amp;</a>
+<a name="161"><span class="lineNum">     161 </span>            :          yday                ! day of the year</a>
+<a name="162"><span class="lineNum">     162 </span>            : </a>
+<a name="163"><span class="lineNum">     163 </span>            :       real (kind=dbl_kind), intent(inout) :: &amp;</a>
+<a name="164"><span class="lineNum">     164 </span>            :          coszen              ! cosine solar zenith angle </a>
+<a name="165"><span class="lineNum">     165 </span>            :                              ! negative for sun below horizon</a>
+<a name="166"><span class="lineNum">     166 </span>            :  </a>
+<a name="167"><span class="lineNum">     167 </span>            :       integer (kind=int_kind), intent(in), optional :: &amp;</a>
+<a name="168"><span class="lineNum">     168 </span>            :          days_per_year       ! number of days in one year</a>
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<a name="170"><span class="lineNum">     170 </span>            :       real (kind=dbl_kind), intent(in), optional :: &amp;</a>
+<a name="171"><span class="lineNum">     171 </span>            :          nextsw_cday         ! julian day of next shortwave calculation</a>
+<a name="172"><span class="lineNum">     172 </span>            : </a>
+<a name="173"><span class="lineNum">     173 </span>            :       character (len=char_len), intent(in), optional :: &amp;</a>
+<a name="174"><span class="lineNum">     174 </span>            :          calendar_type       ! differentiates Gregorian from other calendars</a>
+<a name="175"><span class="lineNum">     175 </span>            : </a>
+<a name="176"><span class="lineNum">     176 </span>            :       ! local variables</a>
+<a name="177"><span class="lineNum">     177 </span>            : </a>
+<a name="178"><span class="lineNum">     178 </span><span class="lineCov">      26283 :       real (kind=dbl_kind) :: ydayp1 ! day of year plus one time step</span></a>
+<a name="179"><span class="lineNum">     179 </span>            :  </a>
+<a name="180"><span class="lineNum">     180 </span>            :       character(len=*),parameter :: subname='(compute_coszen)'</a>
+<a name="181"><span class="lineNum">     181 </span>            : </a>
+<a name="182"><span class="lineNum">     182 </span>            : ! Solar declination for next time step</a>
+<a name="183"><span class="lineNum">     183 </span>            :  </a>
+<a name="184"><span class="lineNum">     184 </span>            : #ifdef CESMCOUPLED</a>
+<a name="185"><span class="lineNum">     185 </span>            :       if (calendar_type == &quot;GREGORIAN&quot;) then</a>
+<a name="186"><span class="lineNum">     186 </span>            :          ydayp1 = min(nextsw_cday, real(days_per_year,kind=dbl_kind))</a>
+<a name="187"><span class="lineNum">     187 </span>            :       else</a>
+<a name="188"><span class="lineNum">     188 </span>            :          ydayp1 = nextsw_cday</a>
+<a name="189"><span class="lineNum">     189 </span>            :       endif</a>
+<a name="190"><span class="lineNum">     190 </span>            : </a>
+<a name="191"><span class="lineNum">     191 </span>            :       !--- update coszen when nextsw_cday valid</a>
+<a name="192"><span class="lineNum">     192 </span>            :       if (ydayp1 &gt; -0.5_dbl_kind) then</a>
+<a name="193"><span class="lineNum">     193 </span>            : #else</a>
+<a name="194"><span class="lineNum">     194 </span><span class="lineCov">      98688 :       ydayp1 = yday + sec/secday</span></a>
+<a name="195"><span class="lineNum">     195 </span>            : #endif</a>
+<a name="196"><span class="lineNum">     196 </span>            :  </a>
+<a name="197"><span class="lineNum">     197 </span>            :       call shr_orb_decl(ydayp1, eccen, mvelpp, lambm0, &amp;</a>
+<a name="198"><span class="lineNum">     198 </span><span class="lineCov">      98688 :                         obliqr, decln, eccf)</span></a>
+<a name="199"><span class="lineNum">     199 </span><span class="lineCov">      98688 :       if (icepack_warnings_aborted(subname)) return</span></a>
+<a name="200"><span class="lineNum">     200 </span>            : </a>
+<a name="201"><span class="lineNum">     201 </span>            :       coszen = sin(tlat)*sin(decln) &amp;</a>
+<a name="202"><span class="lineNum">     202 </span>            :              + cos(tlat)*cos(decln) &amp;</a>
+<a name="203"><span class="lineNum">     203 </span><span class="lineCov">      98688 :              *cos((sec/secday-p5)*c2*pi + tlon) !cos(hour angle)</span></a>
+<a name="204"><span class="lineNum">     204 </span>            :  </a>
+<a name="205"><span class="lineNum">     205 </span>            : #ifdef CESMCOUPLED</a>
+<a name="206"><span class="lineNum">     206 </span>            :       endif</a>
+<a name="207"><span class="lineNum">     207 </span>            : #endif</a>
+<a name="208"><span class="lineNum">     208 </span>            : </a>
+<a name="209"><span class="lineNum">     209 </span>            :       end subroutine compute_coszen</a>
+<a name="210"><span class="lineNum">     210 </span>            :  </a>
+<a name="211"><span class="lineNum">     211 </span>            : !===============================================================================</a>
+<a name="212"><span class="lineNum">     212 </span>            : </a>
+<a name="213"><span class="lineNum">     213 </span>            : #ifndef CESMCOUPLED</a>
+<a name="214"><span class="lineNum">     214 </span><span class="lineCov">         16 : SUBROUTINE shr_orb_params( iyear_AD , eccen , obliq , mvelp    , &amp;</span></a>
+<a name="215"><span class="lineNum">     215 </span>            :            &amp;               obliqr   , lambm0, mvelpp, log_print)</a>
+<a name="216"><span class="lineNum">     216 </span>            : </a>
+<a name="217"><span class="lineNum">     217 </span>            : !-------------------------------------------------------------------------------</a>
+<a name="218"><span class="lineNum">     218 </span>            : !</a>
+<a name="219"><span class="lineNum">     219 </span>            : ! Calculate earths orbital parameters using Dave Threshers formula which </a>
+<a name="220"><span class="lineNum">     220 </span>            : ! came from Berger, Andre.  1978  A Simple Algorithm to Compute Long-Term </a>
+<a name="221"><span class="lineNum">     221 </span>            : ! Variations of Daily Insolation.  Contribution 18, Institute of Astronomy </a>
+<a name="222"><span class="lineNum">     222 </span>            : ! and Geophysics, Universite Catholique de Louvain, Louvain-la-Neuve, Belgium</a>
+<a name="223"><span class="lineNum">     223 </span>            : !</a>
+<a name="224"><span class="lineNum">     224 </span>            : !------------------------------Code history-------------------------------------</a>
+<a name="225"><span class="lineNum">     225 </span>            : !</a>
+<a name="226"><span class="lineNum">     226 </span>            : ! Original Author: Erik Kluzek</a>
+<a name="227"><span class="lineNum">     227 </span>            : ! Date:            Oct/97</a>
+<a name="228"><span class="lineNum">     228 </span>            : !</a>
+<a name="229"><span class="lineNum">     229 </span>            : !-------------------------------------------------------------------------------</a>
+<a name="230"><span class="lineNum">     230 </span>            : </a>
+<a name="231"><span class="lineNum">     231 </span>            :    !----------------------------- Arguments ------------------------------------</a>
+<a name="232"><span class="lineNum">     232 </span>            :    integer(int_kind),intent(in)    :: iyear_AD  ! Year to calculate orbit for</a>
+<a name="233"><span class="lineNum">     233 </span>            :    real   (dbl_kind),intent(inout) :: eccen     ! orbital eccentricity</a>
+<a name="234"><span class="lineNum">     234 </span>            :    real   (dbl_kind),intent(inout) :: obliq     ! obliquity in degrees</a>
+<a name="235"><span class="lineNum">     235 </span>            :    real   (dbl_kind),intent(inout) :: mvelp     ! moving vernal equinox long</a>
+<a name="236"><span class="lineNum">     236 </span>            :    real   (dbl_kind),intent(out)   :: obliqr    ! Earths obliquity in rad</a>
+<a name="237"><span class="lineNum">     237 </span>            :    real   (dbl_kind),intent(out)   :: lambm0    ! Mean long of perihelion at</a>
+<a name="238"><span class="lineNum">     238 </span>            :                                                    ! vernal equinox (radians)</a>
+<a name="239"><span class="lineNum">     239 </span>            :    real   (dbl_kind),intent(out)   :: mvelpp    ! moving vernal equinox long</a>
+<a name="240"><span class="lineNum">     240 </span>            :                                                    ! of perihelion plus pi (rad)</a>
+<a name="241"><span class="lineNum">     241 </span>            :    logical(log_kind),intent(in)    :: log_print ! Flags print of status/error</a>
+<a name="242"><span class="lineNum">     242 </span>            : </a>
+<a name="243"><span class="lineNum">     243 </span>            :    !------------------------------ Parameters ----------------------------------</a>
+<a name="244"><span class="lineNum">     244 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_UNDEF_REAL = 1.e36_dbl_kind ! undefined real </a>
+<a name="245"><span class="lineNum">     245 </span>            :    integer(int_kind),parameter :: SHR_ORB_UNDEF_INT  = 2000000000        ! undefined int</a>
+<a name="246"><span class="lineNum">     246 </span>            :    integer(int_kind),parameter :: poblen =47 ! # of elements in series wrt obliquity</a>
+<a name="247"><span class="lineNum">     247 </span>            :    integer(int_kind),parameter :: pecclen=19 ! # of elements in series wrt eccentricity</a>
+<a name="248"><span class="lineNum">     248 </span>            :    integer(int_kind),parameter :: pmvelen=78 ! # of elements in series wrt vernal equinox</a>
+<a name="249"><span class="lineNum">     249 </span>            :    real   (dbl_kind),parameter :: psecdeg = 1.0_dbl_kind/3600.0_dbl_kind ! arc sec to deg conversion</a>
+<a name="250"><span class="lineNum">     250 </span>            : </a>
+<a name="251"><span class="lineNum">     251 </span><span class="lineCov">          4 :    real   (dbl_kind) :: yb4_1950AD         ! number of years before 1950 AD</span></a>
+<a name="252"><span class="lineNum">     252 </span>            : </a>
+<a name="253"><span class="lineNum">     253 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_ECCEN_MIN  =   0.0_dbl_kind ! min value for eccen</a>
+<a name="254"><span class="lineNum">     254 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_ECCEN_MAX  =   0.1_dbl_kind ! max value for eccen</a>
+<a name="255"><span class="lineNum">     255 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_OBLIQ_MIN  = -90.0_dbl_kind ! min value for obliq</a>
+<a name="256"><span class="lineNum">     256 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_OBLIQ_MAX  = +90.0_dbl_kind ! max value for obliq</a>
+<a name="257"><span class="lineNum">     257 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_MVELP_MIN  =   0.0_dbl_kind ! min value for mvelp</a>
+<a name="258"><span class="lineNum">     258 </span>            :    real   (dbl_kind),parameter :: SHR_ORB_MVELP_MAX  = 360.0_dbl_kind ! max value for mvelp</a>
+<a name="259"><span class="lineNum">     259 </span>            : </a>
+<a name="260"><span class="lineNum">     260 </span>            :    ! Cosine series data for computation of obliquity: amplitude (arc seconds),</a>
+<a name="261"><span class="lineNum">     261 </span>            :    ! rate (arc seconds/year), phase (degrees).</a>
+<a name="262"><span class="lineNum">     262 </span>            :  </a>
+<a name="263"><span class="lineNum">     263 </span>            :    real   (dbl_kind), parameter :: obamp(poblen) =  &amp; ! amplitudes for obliquity cos series</a>
+<a name="264"><span class="lineNum">     264 </span>            :    &amp;      (/   -2462.2214466_dbl_kind, -857.3232075_dbl_kind, -629.3231835_dbl_kind,   &amp;</a>
+<a name="265"><span class="lineNum">     265 </span>            :    &amp;            -414.2804924_dbl_kind, -311.7632587_dbl_kind,  308.9408604_dbl_kind,   &amp;</a>
+<a name="266"><span class="lineNum">     266 </span>            :    &amp;            -162.5533601_dbl_kind, -116.1077911_dbl_kind,  101.1189923_dbl_kind,   &amp;</a>
+<a name="267"><span class="lineNum">     267 </span>            :    &amp;             -67.6856209_dbl_kind,   24.9079067_dbl_kind,   22.5811241_dbl_kind,   &amp;</a>
+<a name="268"><span class="lineNum">     268 </span>            :    &amp;             -21.1648355_dbl_kind,  -15.6549876_dbl_kind,   15.3936813_dbl_kind,   &amp;</a>
+<a name="269"><span class="lineNum">     269 </span>            :    &amp;              14.6660938_dbl_kind,  -11.7273029_dbl_kind,   10.2742696_dbl_kind,   &amp;</a>
+<a name="270"><span class="lineNum">     270 </span>            :    &amp;               6.4914588_dbl_kind,    5.8539148_dbl_kind,   -5.4872205_dbl_kind,   &amp;</a>
+<a name="271"><span class="lineNum">     271 </span>            :    &amp;              -5.4290191_dbl_kind,    5.1609570_dbl_kind,    5.0786314_dbl_kind,   &amp;</a>
+<a name="272"><span class="lineNum">     272 </span>            :    &amp;              -4.0735782_dbl_kind,    3.7227167_dbl_kind,    3.3971932_dbl_kind,   &amp;</a>
+<a name="273"><span class="lineNum">     273 </span>            :    &amp;              -2.8347004_dbl_kind,   -2.6550721_dbl_kind,   -2.5717867_dbl_kind,   &amp;</a>
+<a name="274"><span class="lineNum">     274 </span>            :    &amp;              -2.4712188_dbl_kind,    2.4625410_dbl_kind,    2.2464112_dbl_kind,   &amp;</a>
+<a name="275"><span class="lineNum">     275 </span>            :    &amp;              -2.0755511_dbl_kind,   -1.9713669_dbl_kind,   -1.8813061_dbl_kind,   &amp;</a>
+<a name="276"><span class="lineNum">     276 </span>            :    &amp;              -1.8468785_dbl_kind,    1.8186742_dbl_kind,    1.7601888_dbl_kind,   &amp;</a>
+<a name="277"><span class="lineNum">     277 </span>            :    &amp;              -1.5428851_dbl_kind,    1.4738838_dbl_kind,   -1.4593669_dbl_kind,   &amp;</a>
+<a name="278"><span class="lineNum">     278 </span>            :    &amp;               1.4192259_dbl_kind,   -1.1818980_dbl_kind,    1.1756474_dbl_kind,   &amp;</a>
+<a name="279"><span class="lineNum">     279 </span>            :    &amp;              -1.1316126_dbl_kind,    1.0896928_dbl_kind/)</a>
+<a name="280"><span class="lineNum">     280 </span>            :  </a>
+<a name="281"><span class="lineNum">     281 </span>            :    real   (dbl_kind), parameter :: obrate(poblen) = &amp; ! rates for obliquity cosine series</a>
+<a name="282"><span class="lineNum">     282 </span>            :    &amp;        (/  31.609974_dbl_kind, 32.620504_dbl_kind, 24.172203_dbl_kind,   &amp;</a>
+<a name="283"><span class="lineNum">     283 </span>            :    &amp;            31.983787_dbl_kind, 44.828336_dbl_kind, 30.973257_dbl_kind,   &amp;</a>
+<a name="284"><span class="lineNum">     284 </span>            :    &amp;            43.668246_dbl_kind, 32.246691_dbl_kind, 30.599444_dbl_kind,   &amp;</a>
+<a name="285"><span class="lineNum">     285 </span>            :    &amp;            42.681324_dbl_kind, 43.836462_dbl_kind, 47.439436_dbl_kind,   &amp;</a>
+<a name="286"><span class="lineNum">     286 </span>            :    &amp;            63.219948_dbl_kind, 64.230478_dbl_kind,  1.010530_dbl_kind,   &amp;</a>
+<a name="287"><span class="lineNum">     287 </span>            :    &amp;             7.437771_dbl_kind, 55.782177_dbl_kind,  0.373813_dbl_kind,   &amp;</a>
+<a name="288"><span class="lineNum">     288 </span>            :    &amp;            13.218362_dbl_kind, 62.583231_dbl_kind, 63.593761_dbl_kind,   &amp;</a>
+<a name="289"><span class="lineNum">     289 </span>            :    &amp;            76.438310_dbl_kind, 45.815258_dbl_kind,  8.448301_dbl_kind,   &amp;</a>
+<a name="290"><span class="lineNum">     290 </span>            :    &amp;            56.792707_dbl_kind, 49.747842_dbl_kind, 12.058272_dbl_kind,   &amp;</a>
+<a name="291"><span class="lineNum">     291 </span>            :    &amp;            75.278220_dbl_kind, 65.241008_dbl_kind, 64.604291_dbl_kind,   &amp;</a>
+<a name="292"><span class="lineNum">     292 </span>            :    &amp;             1.647247_dbl_kind,  7.811584_dbl_kind, 12.207832_dbl_kind,   &amp;</a>
+<a name="293"><span class="lineNum">     293 </span>            :    &amp;            63.856665_dbl_kind, 56.155990_dbl_kind, 77.448840_dbl_kind,   &amp;</a>
+<a name="294"><span class="lineNum">     294 </span>            :    &amp;             6.801054_dbl_kind, 62.209418_dbl_kind, 20.656133_dbl_kind,   &amp;</a>
+<a name="295"><span class="lineNum">     295 </span>            :    &amp;            48.344406_dbl_kind, 55.145460_dbl_kind, 69.000539_dbl_kind,   &amp;</a>
+<a name="296"><span class="lineNum">     296 </span>            :    &amp;            11.071350_dbl_kind, 74.291298_dbl_kind, 11.047742_dbl_kind,   &amp;</a>
+<a name="297"><span class="lineNum">     297 </span>            :    &amp;             0.636717_dbl_kind, 12.844549_dbl_kind/)</a>
+<a name="298"><span class="lineNum">     298 </span>            :  </a>
+<a name="299"><span class="lineNum">     299 </span>            :    real   (dbl_kind), parameter :: obphas(poblen) = &amp; ! phases for obliquity cosine series</a>
+<a name="300"><span class="lineNum">     300 </span>            :    &amp;      (/    251.9025_dbl_kind, 280.8325_dbl_kind, 128.3057_dbl_kind,   &amp;</a>
+<a name="301"><span class="lineNum">     301 </span>            :    &amp;            292.7252_dbl_kind,  15.3747_dbl_kind, 263.7951_dbl_kind,   &amp;</a>
+<a name="302"><span class="lineNum">     302 </span>            :    &amp;            308.4258_dbl_kind, 240.0099_dbl_kind, 222.9725_dbl_kind,   &amp;</a>
+<a name="303"><span class="lineNum">     303 </span>            :    &amp;            268.7809_dbl_kind, 316.7998_dbl_kind, 319.6024_dbl_kind,   &amp;</a>
+<a name="304"><span class="lineNum">     304 </span>            :    &amp;            143.8050_dbl_kind, 172.7351_dbl_kind,  28.9300_dbl_kind,   &amp;</a>
+<a name="305"><span class="lineNum">     305 </span>            :    &amp;            123.5968_dbl_kind,  20.2082_dbl_kind,  40.8226_dbl_kind,   &amp;</a>
+<a name="306"><span class="lineNum">     306 </span>            :    &amp;            123.4722_dbl_kind, 155.6977_dbl_kind, 184.6277_dbl_kind,   &amp;</a>
+<a name="307"><span class="lineNum">     307 </span>            :    &amp;            267.2772_dbl_kind,  55.0196_dbl_kind, 152.5268_dbl_kind,   &amp;</a>
+<a name="308"><span class="lineNum">     308 </span>            :    &amp;             49.1382_dbl_kind, 204.6609_dbl_kind,  56.5233_dbl_kind,   &amp;</a>
+<a name="309"><span class="lineNum">     309 </span>            :    &amp;            200.3284_dbl_kind, 201.6651_dbl_kind, 213.5577_dbl_kind,   &amp;</a>
+<a name="310"><span class="lineNum">     310 </span>            :    &amp;             17.0374_dbl_kind, 164.4194_dbl_kind,  94.5422_dbl_kind,   &amp;</a>
+<a name="311"><span class="lineNum">     311 </span>            :    &amp;            131.9124_dbl_kind,  61.0309_dbl_kind, 296.2073_dbl_kind,   &amp;</a>
+<a name="312"><span class="lineNum">     312 </span>            :    &amp;            135.4894_dbl_kind, 114.8750_dbl_kind, 247.0691_dbl_kind,   &amp;</a>
+<a name="313"><span class="lineNum">     313 </span>            :    &amp;            256.6114_dbl_kind,  32.1008_dbl_kind, 143.6804_dbl_kind,   &amp;</a>
+<a name="314"><span class="lineNum">     314 </span>            :    &amp;             16.8784_dbl_kind, 160.6835_dbl_kind,  27.5932_dbl_kind,   &amp;</a>
+<a name="315"><span class="lineNum">     315 </span>            :    &amp;            348.1074_dbl_kind,  82.6496_dbl_kind/)</a>
+<a name="316"><span class="lineNum">     316 </span>            :  </a>
+<a name="317"><span class="lineNum">     317 </span>            :    ! Cosine/sine series data for computation of eccentricity and fixed vernal </a>
+<a name="318"><span class="lineNum">     318 </span>            :    ! equinox longitude of perihelion (fvelp): amplitude, </a>
+<a name="319"><span class="lineNum">     319 </span>            :    ! rate (arc seconds/year), phase (degrees).</a>
+<a name="320"><span class="lineNum">     320 </span>            :  </a>
+<a name="321"><span class="lineNum">     321 </span>            :    real   (dbl_kind), parameter :: ecamp (pecclen) = &amp; ! ampl for eccen/fvelp cos/sin series</a>
+<a name="322"><span class="lineNum">     322 </span>            :    &amp;      (/   0.01860798_dbl_kind,  0.01627522_dbl_kind, -0.01300660_dbl_kind,   &amp;</a>
+<a name="323"><span class="lineNum">     323 </span>            :    &amp;           0.00988829_dbl_kind, -0.00336700_dbl_kind,  0.00333077_dbl_kind,   &amp;</a>
+<a name="324"><span class="lineNum">     324 </span>            :    &amp;          -0.00235400_dbl_kind,  0.00140015_dbl_kind,  0.00100700_dbl_kind,   &amp;</a>
+<a name="325"><span class="lineNum">     325 </span>            :    &amp;           0.00085700_dbl_kind,  0.00064990_dbl_kind,  0.00059900_dbl_kind,   &amp;</a>
+<a name="326"><span class="lineNum">     326 </span>            :    &amp;           0.00037800_dbl_kind, -0.00033700_dbl_kind,  0.00027600_dbl_kind,   &amp;</a>
+<a name="327"><span class="lineNum">     327 </span>            :    &amp;           0.00018200_dbl_kind, -0.00017400_dbl_kind, -0.00012400_dbl_kind,   &amp;</a>
+<a name="328"><span class="lineNum">     328 </span>            :    &amp;           0.00001250_dbl_kind/)</a>
+<a name="329"><span class="lineNum">     329 </span>            :  </a>
+<a name="330"><span class="lineNum">     330 </span>            :    real   (dbl_kind), parameter :: ecrate(pecclen) = &amp; ! rates for eccen/fvelp cos/sin series</a>
+<a name="331"><span class="lineNum">     331 </span>            :    &amp;      (/    4.2072050_dbl_kind,  7.3460910_dbl_kind, 17.8572630_dbl_kind,  &amp;</a>
+<a name="332"><span class="lineNum">     332 </span>            :    &amp;           17.2205460_dbl_kind, 16.8467330_dbl_kind,  5.1990790_dbl_kind,  &amp;</a>
+<a name="333"><span class="lineNum">     333 </span>            :    &amp;           18.2310760_dbl_kind, 26.2167580_dbl_kind,  6.3591690_dbl_kind,  &amp;</a>
+<a name="334"><span class="lineNum">     334 </span>            :    &amp;           16.2100160_dbl_kind,  3.0651810_dbl_kind, 16.5838290_dbl_kind,  &amp;</a>
+<a name="335"><span class="lineNum">     335 </span>            :    &amp;           18.4939800_dbl_kind,  6.1909530_dbl_kind, 18.8677930_dbl_kind,  &amp;</a>
+<a name="336"><span class="lineNum">     336 </span>            :    &amp;           17.4255670_dbl_kind,  6.1860010_dbl_kind, 18.4174410_dbl_kind,  &amp;</a>
+<a name="337"><span class="lineNum">     337 </span>            :    &amp;            0.6678630_dbl_kind/)</a>
+<a name="338"><span class="lineNum">     338 </span>            :  </a>
+<a name="339"><span class="lineNum">     339 </span>            :    real   (dbl_kind), parameter :: ecphas(pecclen) = &amp; ! phases for eccen/fvelp cos/sin series</a>
+<a name="340"><span class="lineNum">     340 </span>            :    &amp;      (/    28.620089_dbl_kind, 193.788772_dbl_kind, 308.307024_dbl_kind,  &amp;</a>
+<a name="341"><span class="lineNum">     341 </span>            :    &amp;           320.199637_dbl_kind, 279.376984_dbl_kind,  87.195000_dbl_kind,  &amp;</a>
+<a name="342"><span class="lineNum">     342 </span>            :    &amp;           349.129677_dbl_kind, 128.443387_dbl_kind, 154.143880_dbl_kind,  &amp;</a>
+<a name="343"><span class="lineNum">     343 </span>            :    &amp;           291.269597_dbl_kind, 114.860583_dbl_kind, 332.092251_dbl_kind,  &amp;</a>
+<a name="344"><span class="lineNum">     344 </span>            :    &amp;           296.414411_dbl_kind, 145.769910_dbl_kind, 337.237063_dbl_kind,  &amp;</a>
+<a name="345"><span class="lineNum">     345 </span>            :    &amp;           152.092288_dbl_kind, 126.839891_dbl_kind, 210.667199_dbl_kind,  &amp;</a>
+<a name="346"><span class="lineNum">     346 </span>            :    &amp;            72.108838_dbl_kind/)</a>
+<a name="347"><span class="lineNum">     347 </span>            :  </a>
+<a name="348"><span class="lineNum">     348 </span>            :    ! Sine series data for computation of moving vernal equinox longitude of </a>
+<a name="349"><span class="lineNum">     349 </span>            :    ! perihelion: amplitude (arc seconds), rate (arc sec/year), phase (degrees).      </a>
+<a name="350"><span class="lineNum">     350 </span>            :  </a>
+<a name="351"><span class="lineNum">     351 </span>            :    real   (dbl_kind), parameter :: mvamp (pmvelen) = &amp; ! amplitudes for mvelp sine series </a>
+<a name="352"><span class="lineNum">     352 </span>            :    &amp;      (/   7391.0225890_dbl_kind, 2555.1526947_dbl_kind, 2022.7629188_dbl_kind,  &amp;</a>
+<a name="353"><span class="lineNum">     353 </span>            :    &amp;          -1973.6517951_dbl_kind, 1240.2321818_dbl_kind,  953.8679112_dbl_kind,  &amp;</a>
+<a name="354"><span class="lineNum">     354 </span>            :    &amp;           -931.7537108_dbl_kind,  872.3795383_dbl_kind,  606.3544732_dbl_kind,  &amp;</a>
+<a name="355"><span class="lineNum">     355 </span>            :    &amp;           -496.0274038_dbl_kind,  456.9608039_dbl_kind,  346.9462320_dbl_kind,  &amp;</a>
+<a name="356"><span class="lineNum">     356 </span>            :    &amp;           -305.8412902_dbl_kind,  249.6173246_dbl_kind, -199.1027200_dbl_kind,  &amp;</a>
+<a name="357"><span class="lineNum">     357 </span>            :    &amp;            191.0560889_dbl_kind, -175.2936572_dbl_kind,  165.9068833_dbl_kind,  &amp;</a>
+<a name="358"><span class="lineNum">     358 </span>            :    &amp;            161.1285917_dbl_kind,  139.7878093_dbl_kind, -133.5228399_dbl_kind,  &amp;</a>
+<a name="359"><span class="lineNum">     359 </span>            :    &amp;            117.0673811_dbl_kind,  104.6907281_dbl_kind,   95.3227476_dbl_kind,  &amp;</a>
+<a name="360"><span class="lineNum">     360 </span>            :    &amp;             86.7824524_dbl_kind,   86.0857729_dbl_kind,   70.5893698_dbl_kind,  &amp;</a>
+<a name="361"><span class="lineNum">     361 </span>            :    &amp;            -69.9719343_dbl_kind,  -62.5817473_dbl_kind,   61.5450059_dbl_kind,  &amp;</a>
+<a name="362"><span class="lineNum">     362 </span>            :    &amp;            -57.9364011_dbl_kind,   57.1899832_dbl_kind,  -57.0236109_dbl_kind,  &amp;</a>
+<a name="363"><span class="lineNum">     363 </span>            :    &amp;            -54.2119253_dbl_kind,   53.2834147_dbl_kind,   52.1223575_dbl_kind,  &amp;</a>
+<a name="364"><span class="lineNum">     364 </span>            :    &amp;            -49.0059908_dbl_kind,  -48.3118757_dbl_kind,  -45.4191685_dbl_kind,  &amp;</a>
+<a name="365"><span class="lineNum">     365 </span>            :    &amp;            -42.2357920_dbl_kind,  -34.7971099_dbl_kind,   34.4623613_dbl_kind,  &amp;</a>
+<a name="366"><span class="lineNum">     366 </span>            :    &amp;            -33.8356643_dbl_kind,   33.6689362_dbl_kind,  -31.2521586_dbl_kind,  &amp;</a>
+<a name="367"><span class="lineNum">     367 </span>            :    &amp;            -30.8798701_dbl_kind,   28.4640769_dbl_kind,  -27.1960802_dbl_kind,  &amp;</a>
+<a name="368"><span class="lineNum">     368 </span>            :    &amp;             27.0860736_dbl_kind,  -26.3437456_dbl_kind,   24.7253740_dbl_kind,  &amp;</a>
+<a name="369"><span class="lineNum">     369 </span>            :    &amp;             24.6732126_dbl_kind,   24.4272733_dbl_kind,   24.0127327_dbl_kind,  &amp;</a>
+<a name="370"><span class="lineNum">     370 </span>            :    &amp;             21.7150294_dbl_kind,  -21.5375347_dbl_kind,   18.1148363_dbl_kind,  &amp;</a>
+<a name="371"><span class="lineNum">     371 </span>            :    &amp;            -16.9603104_dbl_kind,  -16.1765215_dbl_kind,   15.5567653_dbl_kind,  &amp;</a>
+<a name="372"><span class="lineNum">     372 </span>            :    &amp;             15.4846529_dbl_kind,   15.2150632_dbl_kind,   14.5047426_dbl_kind,  &amp;</a>
+<a name="373"><span class="lineNum">     373 </span>            :    &amp;            -14.3873316_dbl_kind,   13.1351419_dbl_kind,   12.8776311_dbl_kind,  &amp;</a>
+<a name="374"><span class="lineNum">     374 </span>            :    &amp;             11.9867234_dbl_kind,   11.9385578_dbl_kind,   11.7030822_dbl_kind,  &amp;</a>
+<a name="375"><span class="lineNum">     375 </span>            :    &amp;             11.6018181_dbl_kind,  -11.2617293_dbl_kind,  -10.4664199_dbl_kind,  &amp;</a>
+<a name="376"><span class="lineNum">     376 </span>            :    &amp;             10.4333970_dbl_kind,  -10.2377466_dbl_kind,   10.1934446_dbl_kind,  &amp;</a>
+<a name="377"><span class="lineNum">     377 </span>            :    &amp;            -10.1280191_dbl_kind,   10.0289441_dbl_kind,  -10.0034259_dbl_kind/)</a>
+<a name="378"><span class="lineNum">     378 </span>            :  </a>
+<a name="379"><span class="lineNum">     379 </span>            :    real   (dbl_kind), parameter :: mvrate(pmvelen) = &amp; ! rates for mvelp sine series </a>
+<a name="380"><span class="lineNum">     380 </span>            :    &amp;      (/    31.609974_dbl_kind, 32.620504_dbl_kind, 24.172203_dbl_kind,   &amp;</a>
+<a name="381"><span class="lineNum">     381 </span>            :    &amp;             0.636717_dbl_kind, 31.983787_dbl_kind,  3.138886_dbl_kind,   &amp;</a>
+<a name="382"><span class="lineNum">     382 </span>            :    &amp;            30.973257_dbl_kind, 44.828336_dbl_kind,  0.991874_dbl_kind,   &amp;</a>
+<a name="383"><span class="lineNum">     383 </span>            :    &amp;             0.373813_dbl_kind, 43.668246_dbl_kind, 32.246691_dbl_kind,   &amp;</a>
+<a name="384"><span class="lineNum">     384 </span>            :    &amp;            30.599444_dbl_kind,  2.147012_dbl_kind, 10.511172_dbl_kind,   &amp;</a>
+<a name="385"><span class="lineNum">     385 </span>            :    &amp;            42.681324_dbl_kind, 13.650058_dbl_kind,  0.986922_dbl_kind,   &amp;</a>
+<a name="386"><span class="lineNum">     386 </span>            :    &amp;             9.874455_dbl_kind, 13.013341_dbl_kind,  0.262904_dbl_kind,   &amp;</a>
+<a name="387"><span class="lineNum">     387 </span>            :    &amp;             0.004952_dbl_kind,  1.142024_dbl_kind, 63.219948_dbl_kind,   &amp;</a>
+<a name="388"><span class="lineNum">     388 </span>            :    &amp;             0.205021_dbl_kind,  2.151964_dbl_kind, 64.230478_dbl_kind,   &amp;</a>
+<a name="389"><span class="lineNum">     389 </span>            :    &amp;            43.836462_dbl_kind, 47.439436_dbl_kind,  1.384343_dbl_kind,   &amp;</a>
+<a name="390"><span class="lineNum">     390 </span>            :    &amp;             7.437771_dbl_kind, 18.829299_dbl_kind,  9.500642_dbl_kind,   &amp;</a>
+<a name="391"><span class="lineNum">     391 </span>            :    &amp;             0.431696_dbl_kind,  1.160090_dbl_kind, 55.782177_dbl_kind,   &amp;</a>
+<a name="392"><span class="lineNum">     392 </span>            :    &amp;            12.639528_dbl_kind,  1.155138_dbl_kind,  0.168216_dbl_kind,   &amp;</a>
+<a name="393"><span class="lineNum">     393 </span>            :    &amp;             1.647247_dbl_kind, 10.884985_dbl_kind,  5.610937_dbl_kind,   &amp;</a>
+<a name="394"><span class="lineNum">     394 </span>            :    &amp;            12.658184_dbl_kind,  1.010530_dbl_kind,  1.983748_dbl_kind,   &amp;</a>
+<a name="395"><span class="lineNum">     395 </span>            :    &amp;            14.023871_dbl_kind,  0.560178_dbl_kind,  1.273434_dbl_kind,   &amp;</a>
+<a name="396"><span class="lineNum">     396 </span>            :    &amp;            12.021467_dbl_kind, 62.583231_dbl_kind, 63.593761_dbl_kind,   &amp;</a>
+<a name="397"><span class="lineNum">     397 </span>            :    &amp;            76.438310_dbl_kind,  4.280910_dbl_kind, 13.218362_dbl_kind,   &amp;</a>
+<a name="398"><span class="lineNum">     398 </span>            :    &amp;            17.818769_dbl_kind,  8.359495_dbl_kind, 56.792707_dbl_kind,   &amp;</a>
+<a name="399"><span class="lineNum">     399 </span>            :    &amp;            8.448301_dbl_kind,  1.978796_dbl_kind,  8.863925_dbl_kind,   &amp;</a>
+<a name="400"><span class="lineNum">     400 </span>            :    &amp;             0.186365_dbl_kind,  8.996212_dbl_kind,  6.771027_dbl_kind,   &amp;</a>
+<a name="401"><span class="lineNum">     401 </span>            :    &amp;            45.815258_dbl_kind, 12.002811_dbl_kind, 75.278220_dbl_kind,   &amp;</a>
+<a name="402"><span class="lineNum">     402 </span>            :    &amp;            65.241008_dbl_kind, 18.870667_dbl_kind, 22.009553_dbl_kind,   &amp;</a>
+<a name="403"><span class="lineNum">     403 </span>            :    &amp;            64.604291_dbl_kind, 11.498094_dbl_kind,  0.578834_dbl_kind,   &amp;</a>
+<a name="404"><span class="lineNum">     404 </span>            :    &amp;             9.237738_dbl_kind, 49.747842_dbl_kind,  2.147012_dbl_kind,   &amp;</a>
+<a name="405"><span class="lineNum">     405 </span>            :    &amp;             1.196895_dbl_kind,  2.133898_dbl_kind,  0.173168_dbl_kind/)</a>
+<a name="406"><span class="lineNum">     406 </span>            : </a>
+<a name="407"><span class="lineNum">     407 </span>            :    real   (dbl_kind), parameter :: mvphas(pmvelen) = &amp; ! phases for mvelp sine series</a>
+<a name="408"><span class="lineNum">     408 </span>            :    &amp;      (/    251.9025_dbl_kind, 280.8325_dbl_kind, 128.3057_dbl_kind,   &amp;</a>
+<a name="409"><span class="lineNum">     409 </span>            :    &amp;            348.1074_dbl_kind, 292.7252_dbl_kind, 165.1686_dbl_kind,   &amp;</a>
+<a name="410"><span class="lineNum">     410 </span>            :    &amp;            263.7951_dbl_kind,  15.3747_dbl_kind,  58.5749_dbl_kind,   &amp;</a>
+<a name="411"><span class="lineNum">     411 </span>            :    &amp;             40.8226_dbl_kind, 308.4258_dbl_kind, 240.0099_dbl_kind,   &amp;</a>
+<a name="412"><span class="lineNum">     412 </span>            :    &amp;            222.9725_dbl_kind, 106.5937_dbl_kind, 114.5182_dbl_kind,   &amp;</a>
+<a name="413"><span class="lineNum">     413 </span>            :    &amp;            268.7809_dbl_kind, 279.6869_dbl_kind,  39.6448_dbl_kind,   &amp;</a>
+<a name="414"><span class="lineNum">     414 </span>            :    &amp;            126.4108_dbl_kind, 291.5795_dbl_kind, 307.2848_dbl_kind,   &amp;</a>
+<a name="415"><span class="lineNum">     415 </span>            :    &amp;             18.9300_dbl_kind, 273.7596_dbl_kind, 143.8050_dbl_kind,   &amp;</a>
+<a name="416"><span class="lineNum">     416 </span>            :    &amp;            191.8927_dbl_kind, 125.5237_dbl_kind, 172.7351_dbl_kind,   &amp;</a>
+<a name="417"><span class="lineNum">     417 </span>            :    &amp;            316.7998_dbl_kind, 319.6024_dbl_kind,  69.7526_dbl_kind,   &amp;</a>
+<a name="418"><span class="lineNum">     418 </span>            :    &amp;            123.5968_dbl_kind, 217.6432_dbl_kind,  85.5882_dbl_kind,   &amp;</a>
+<a name="419"><span class="lineNum">     419 </span>            :    &amp;            156.2147_dbl_kind,  66.9489_dbl_kind,  20.2082_dbl_kind,   &amp;</a>
+<a name="420"><span class="lineNum">     420 </span>            :    &amp;            250.7568_dbl_kind,  48.0188_dbl_kind,   8.3739_dbl_kind,   &amp;</a>
+<a name="421"><span class="lineNum">     421 </span>            :    &amp;             17.0374_dbl_kind, 155.3409_dbl_kind,  94.1709_dbl_kind,   &amp;</a>
+<a name="422"><span class="lineNum">     422 </span>            :    &amp;            221.1120_dbl_kind,  28.9300_dbl_kind, 117.1498_dbl_kind,   &amp;</a>
+<a name="423"><span class="lineNum">     423 </span>            :    &amp;            320.5095_dbl_kind, 262.3602_dbl_kind, 336.2148_dbl_kind,   &amp;</a>
+<a name="424"><span class="lineNum">     424 </span>            :    &amp;            233.0046_dbl_kind, 155.6977_dbl_kind, 184.6277_dbl_kind,   &amp;</a>
+<a name="425"><span class="lineNum">     425 </span>            :    &amp;            267.2772_dbl_kind,  78.9281_dbl_kind, 123.4722_dbl_kind,   &amp;</a>
+<a name="426"><span class="lineNum">     426 </span>            :    &amp;            188.7132_dbl_kind, 180.1364_dbl_kind,  49.1382_dbl_kind,   &amp;</a>
+<a name="427"><span class="lineNum">     427 </span>            :    &amp;            152.5268_dbl_kind,  98.2198_dbl_kind,  97.4808_dbl_kind,   &amp;</a>
+<a name="428"><span class="lineNum">     428 </span>            :    &amp;            221.5376_dbl_kind, 168.2438_dbl_kind, 161.1199_dbl_kind,   &amp;</a>
+<a name="429"><span class="lineNum">     429 </span>            :    &amp;             55.0196_dbl_kind, 262.6495_dbl_kind, 200.3284_dbl_kind,   &amp;</a>
+<a name="430"><span class="lineNum">     430 </span>            :    &amp;            201.6651_dbl_kind, 294.6547_dbl_kind,  99.8233_dbl_kind,   &amp;</a>
+<a name="431"><span class="lineNum">     431 </span>            :    &amp;            213.5577_dbl_kind, 154.1631_dbl_kind, 232.7153_dbl_kind,   &amp;</a>
+<a name="432"><span class="lineNum">     432 </span>            :    &amp;            138.3034_dbl_kind, 204.6609_dbl_kind, 106.5938_dbl_kind,   &amp;</a>
+<a name="433"><span class="lineNum">     433 </span>            :    &amp;            250.4676_dbl_kind, 332.3345_dbl_kind,  27.3039_dbl_kind/)</a>
+<a name="434"><span class="lineNum">     434 </span>            :  </a>
+<a name="435"><span class="lineNum">     435 </span>            :    !---------------------------Local variables----------------------------------</a>
+<a name="436"><span class="lineNum">     436 </span>            :    integer(int_kind) :: i       ! Index for series summations</a>
+<a name="437"><span class="lineNum">     437 </span><span class="lineCov">          4 :    real   (dbl_kind) :: obsum   ! Obliquity series summation</span></a>
+<a name="438"><span class="lineNum">     438 </span><span class="lineCov">          4 :    real   (dbl_kind) :: cossum  ! Cos series summation for eccentricity/fvelp</span></a>
+<a name="439"><span class="lineNum">     439 </span><span class="lineCov">          4 :    real   (dbl_kind) :: sinsum  ! Sin series summation for eccentricity/fvelp</span></a>
+<a name="440"><span class="lineNum">     440 </span><span class="lineCov">          4 :    real   (dbl_kind) :: fvelp   ! Fixed vernal equinox long of perihelion</span></a>
+<a name="441"><span class="lineNum">     441 </span><span class="lineCov">          4 :    real   (dbl_kind) :: mvsum   ! mvelp series summation</span></a>
+<a name="442"><span class="lineNum">     442 </span><span class="lineCov">          4 :    real   (dbl_kind) :: beta    ! Intermediate argument for lambm0</span></a>
+<a name="443"><span class="lineNum">     443 </span><span class="lineCov">          4 :    real   (dbl_kind) :: years   ! Years to time of interest ( pos &lt;=&gt; future)</span></a>
+<a name="444"><span class="lineNum">     444 </span><span class="lineCov">          4 :    real   (dbl_kind) :: eccen2  ! eccentricity squared</span></a>
+<a name="445"><span class="lineNum">     445 </span><span class="lineCov">          4 :    real   (dbl_kind) :: eccen3  ! eccentricity cubed</span></a>
+<a name="446"><span class="lineNum">     446 </span><span class="lineCov">          4 :    real   (dbl_kind) :: degrad  ! degrees to rad conversion</span></a>
+<a name="447"><span class="lineNum">     447 </span>            :    integer (int_kind), parameter :: s_loglev    = 0         </a>
+<a name="448"><span class="lineNum">     448 </span>            :    character(len=*),parameter :: subname='(shr_orb_params)'</a>
+<a name="449"><span class="lineNum">     449 </span>            :  </a>
+<a name="450"><span class="lineNum">     450 </span>            :    !-------------------------- Formats -----------------------------------------</a>
+<a name="451"><span class="lineNum">     451 </span>            :    character(len=*),parameter :: F00 = &quot;('(shr_orb_params) ',4a)&quot;</a>
+<a name="452"><span class="lineNum">     452 </span>            :    character(len=*),parameter :: F01 = &quot;('(shr_orb_params) ',a,i9)&quot;</a>
+<a name="453"><span class="lineNum">     453 </span>            :    character(len=*),parameter :: F02 = &quot;('(shr_orb_params) ',a,f6.3)&quot;</a>
+<a name="454"><span class="lineNum">     454 </span>            :    character(len=*),parameter :: F03 = &quot;('(shr_orb_params) ',a,es14.6)&quot;</a>
+<a name="455"><span class="lineNum">     455 </span>            : </a>
+<a name="456"><span class="lineNum">     456 </span>            :    !----------------------------------------------------------------------------</a>
+<a name="457"><span class="lineNum">     457 </span>            :    ! radinp and algorithms below will need a degree to radian conversion factor</a>
+<a name="458"><span class="lineNum">     458 </span>            : </a>
+<a name="459"><span class="lineNum">     459 </span>            :    !call icepack_warnings_add(subname//'  ')</a>
+<a name="460"><span class="lineNum">     460 </span><span class="lineCov">         16 :    degrad = pi/180._dbl_kind   ! degree to radian conversion factor</span></a>
+<a name="461"><span class="lineNum">     461 </span>            :  </a>
+<a name="462"><span class="lineNum">     462 </span>            :    if ( log_print .and. s_loglev &gt; 0 ) then</a>
+<a name="463"><span class="lineNum">     463 </span>            :      write(warnstr,F00) subname//'Calculate characteristics of the orbit:'</a>
+<a name="464"><span class="lineNum">     464 </span>            :      call icepack_warnings_add(warnstr)</a>
+<a name="465"><span class="lineNum">     465 </span>            :    end if</a>
+<a name="466"><span class="lineNum">     466 </span>            :  </a>
+<a name="467"><span class="lineNum">     467 </span>            :    ! Check for flag to use input orbit parameters</a>
+<a name="468"><span class="lineNum">     468 </span>            :  </a>
+<a name="469"><span class="lineNum">     469 </span><span class="lineCov">         16 :    IF ( iyear_AD == SHR_ORB_UNDEF_INT ) THEN</span></a>
+<a name="470"><span class="lineNum">     470 </span>            : </a>
+<a name="471"><span class="lineNum">     471 </span>            :       ! Check input obliq, eccen, and mvelp to ensure reasonable</a>
+<a name="472"><span class="lineNum">     472 </span>            :  </a>
+<a name="473"><span class="lineNum">     473 </span><span class="lineNoCov">          0 :       if( obliq == SHR_ORB_UNDEF_REAL )then</span></a>
+<a name="474"><span class="lineNum">     474 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//' Have to specify orbital parameters:'</span></a>
+<a name="475"><span class="lineNum">     475 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="476"><span class="lineNum">     476 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'Either set: iyear_AD, OR [obliq, eccen, and mvelp]:'</span></a>
+<a name="477"><span class="lineNum">     477 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="478"><span class="lineNum">     478 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'iyear_AD is the year to simulate orbit for (ie. 1950): '</span></a>
+<a name="479"><span class="lineNum">     479 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="480"><span class="lineNum">     480 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'obliq, eccen, mvelp specify the orbit directly:'</span></a>
+<a name="481"><span class="lineNum">     481 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="482"><span class="lineNum">     482 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'The AMIP II settings (for a 1995 orbit) are: '</span></a>
+<a name="483"><span class="lineNum">     483 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="484"><span class="lineNum">     484 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//' obliq =  23.4441'</span></a>
+<a name="485"><span class="lineNum">     485 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="486"><span class="lineNum">     486 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//' eccen =   0.016715'</span></a>
+<a name="487"><span class="lineNum">     487 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="488"><span class="lineNum">     488 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//' mvelp = 102.7'</span></a>
+<a name="489"><span class="lineNum">     489 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="490"><span class="lineNum">     490 </span><span class="lineNoCov">          0 :          call icepack_warnings_setabort(.true.,__FILE__,__LINE__)</span></a>
+<a name="491"><span class="lineNum">     491 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(subname//' unreasonable oblip')</span></a>
+<a name="492"><span class="lineNum">     492 </span><span class="lineNoCov">          0 :       else if ( log_print ) then</span></a>
+<a name="493"><span class="lineNum">     493 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'Use input orbital parameters: '</span></a>
+<a name="494"><span class="lineNum">     494 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="495"><span class="lineNum">     495 </span>            :       end if</a>
+<a name="496"><span class="lineNum">     496 </span><span class="lineNoCov">          0 :       if( (obliq &lt; SHR_ORB_OBLIQ_MIN).or.(obliq &gt; SHR_ORB_OBLIQ_MAX) ) then</span></a>
+<a name="497"><span class="lineNum">     497 </span><span class="lineNoCov">          0 :          write(warnstr,F03) subname//'Input obliquity unreasonable: ', obliq</span></a>
+<a name="498"><span class="lineNum">     498 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="499"><span class="lineNum">     499 </span><span class="lineNoCov">          0 :          call icepack_warnings_setabort(.true.,__FILE__,__LINE__)</span></a>
+<a name="500"><span class="lineNum">     500 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(subname//' unreasonable obliq')</span></a>
+<a name="501"><span class="lineNum">     501 </span>            :       end if</a>
+<a name="502"><span class="lineNum">     502 </span><span class="lineNoCov">          0 :       if( (eccen &lt; SHR_ORB_ECCEN_MIN).or.(eccen &gt; SHR_ORB_ECCEN_MAX) ) then</span></a>
+<a name="503"><span class="lineNum">     503 </span><span class="lineNoCov">          0 :          write(warnstr,F03) subname//'Input eccentricity unreasonable: ', eccen</span></a>
+<a name="504"><span class="lineNum">     504 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="505"><span class="lineNum">     505 </span><span class="lineNoCov">          0 :          call icepack_warnings_setabort(.true.,__FILE__,__LINE__)</span></a>
+<a name="506"><span class="lineNum">     506 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(subname//' unreasonable eccen')</span></a>
+<a name="507"><span class="lineNum">     507 </span>            :       end if</a>
+<a name="508"><span class="lineNum">     508 </span><span class="lineNoCov">          0 :       if( (mvelp &lt; SHR_ORB_MVELP_MIN).or.(mvelp &gt; SHR_ORB_MVELP_MAX) ) then</span></a>
+<a name="509"><span class="lineNum">     509 </span><span class="lineNoCov">          0 :          write(warnstr,F03) subname//'Input mvelp unreasonable: ' , mvelp</span></a>
+<a name="510"><span class="lineNum">     510 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="511"><span class="lineNum">     511 </span><span class="lineNoCov">          0 :          call icepack_warnings_setabort(.true.,__FILE__,__LINE__)</span></a>
+<a name="512"><span class="lineNum">     512 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(subname//' unreasonable mvelp')</span></a>
+<a name="513"><span class="lineNum">     513 </span>            :       end if</a>
+<a name="514"><span class="lineNum">     514 </span><span class="lineNoCov">          0 :       eccen2 = eccen*eccen</span></a>
+<a name="515"><span class="lineNum">     515 </span><span class="lineNoCov">          0 :       eccen3 = eccen2*eccen</span></a>
+<a name="516"><span class="lineNum">     516 </span>            : </a>
+<a name="517"><span class="lineNum">     517 </span>            :    ELSE  ! Otherwise calculate based on years before present</a>
+<a name="518"><span class="lineNum">     518 </span>            :  </a>
+<a name="519"><span class="lineNum">     519 </span>            :       if ( log_print .and. s_loglev &gt; 0) then</a>
+<a name="520"><span class="lineNum">     520 </span>            :          write(warnstr,F01) subname//'Calculate orbit for year: ' , iyear_AD</a>
+<a name="521"><span class="lineNum">     521 </span>            :          call icepack_warnings_add(warnstr)</a>
+<a name="522"><span class="lineNum">     522 </span>            :       end if</a>
+<a name="523"><span class="lineNum">     523 </span><span class="lineCov">         16 :       yb4_1950AD = 1950.0_dbl_kind - real(iyear_AD,dbl_kind)</span></a>
+<a name="524"><span class="lineNum">     524 </span><span class="lineCov">         16 :       if ( abs(yb4_1950AD) .gt. 1000000.0_dbl_kind )then</span></a>
+<a name="525"><span class="lineNum">     525 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'orbit only valid for years+-1000000'</span></a>
+<a name="526"><span class="lineNum">     526 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="527"><span class="lineNum">     527 </span><span class="lineNoCov">          0 :          write(warnstr,F00) subname//'Relative to 1950 AD'</span></a>
+<a name="528"><span class="lineNum">     528 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="529"><span class="lineNum">     529 </span><span class="lineNoCov">          0 :          write(warnstr,F03) subname//'# of years before 1950: ',yb4_1950AD</span></a>
+<a name="530"><span class="lineNum">     530 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="531"><span class="lineNum">     531 </span><span class="lineNoCov">          0 :          write(warnstr,F01) subname//'Year to simulate was  : ',iyear_AD</span></a>
+<a name="532"><span class="lineNum">     532 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(warnstr)</span></a>
+<a name="533"><span class="lineNum">     533 </span><span class="lineNoCov">          0 :          call icepack_warnings_setabort(.true.,__FILE__,__LINE__)</span></a>
+<a name="534"><span class="lineNum">     534 </span><span class="lineNoCov">          0 :          call icepack_warnings_add(subname//' unreasonable year')</span></a>
+<a name="535"><span class="lineNum">     535 </span>            :       end if</a>
+<a name="536"><span class="lineNum">     536 </span>            :  </a>
+<a name="537"><span class="lineNum">     537 </span>            :       ! The following calculates the earths obliquity, orbital eccentricity</a>
+<a name="538"><span class="lineNum">     538 </span>            :       ! (and various powers of it) and vernal equinox mean longitude of</a>
+<a name="539"><span class="lineNum">     539 </span>            :       ! perihelion for years in the past (future = negative of years past),</a>
+<a name="540"><span class="lineNum">     540 </span>            :       ! using constants (see parameter section) given in the program of:</a>
+<a name="541"><span class="lineNum">     541 </span>            :       !</a>
+<a name="542"><span class="lineNum">     542 </span>            :       ! Berger, Andre.  1978  A Simple Algorithm to Compute Long-Term Variations</a>
+<a name="543"><span class="lineNum">     543 </span>            :       ! of Daily Insolation.  Contribution 18, Institute of Astronomy and</a>
+<a name="544"><span class="lineNum">     544 </span>            :       ! Geophysics, Universite Catholique de Louvain, Louvain-la-Neuve, Belgium.</a>
+<a name="545"><span class="lineNum">     545 </span>            :       !</a>
+<a name="546"><span class="lineNum">     546 </span>            :       ! and formulas given in the paper (where less precise constants are also</a>
+<a name="547"><span class="lineNum">     547 </span>            :       ! given):</a>
+<a name="548"><span class="lineNum">     548 </span>            :       !</a>
+<a name="549"><span class="lineNum">     549 </span>            :       ! Berger, Andre.  1978.  Long-Term Variations of Daily Insolation and</a>
+<a name="550"><span class="lineNum">     550 </span>            :       ! Quaternary Climatic Changes.  J. of the Atmo. Sci. 35:2362-2367</a>
+<a name="551"><span class="lineNum">     551 </span>            :       !</a>
+<a name="552"><span class="lineNum">     552 </span>            :       ! The algorithm is valid only to 1,000,000 years past or hence.</a>
+<a name="553"><span class="lineNum">     553 </span>            :       ! For a solution valid to 5-10 million years past see the above author.</a>
+<a name="554"><span class="lineNum">     554 </span>            :       ! Algorithm below is better for years closer to present than is the</a>
+<a name="555"><span class="lineNum">     555 </span>            :       ! 5-10 million year solution.</a>
+<a name="556"><span class="lineNum">     556 </span>            :       !</a>
+<a name="557"><span class="lineNum">     557 </span>            :       ! Years to time of interest must be negative of years before present</a>
+<a name="558"><span class="lineNum">     558 </span>            :       ! (1950) in formulas that follow. </a>
+<a name="559"><span class="lineNum">     559 </span>            :  </a>
+<a name="560"><span class="lineNum">     560 </span><span class="lineCov">         16 :       years = - yb4_1950AD</span></a>
+<a name="561"><span class="lineNum">     561 </span>            :  </a>
+<a name="562"><span class="lineNum">     562 </span>            :       ! In the summations below, cosine or sine arguments, which end up in</a>
+<a name="563"><span class="lineNum">     563 </span>            :       ! degrees, must be converted to radians via multiplication by degrad.</a>
+<a name="564"><span class="lineNum">     564 </span>            :       !</a>
+<a name="565"><span class="lineNum">     565 </span>            :       ! Summation of cosine series for obliquity (epsilon in Berger 1978) in</a>
+<a name="566"><span class="lineNum">     566 </span>            :       ! degrees. Convert the amplitudes and rates, which are in arc secs, into</a>
+<a name="567"><span class="lineNum">     567 </span>            :       ! degrees via multiplication by psecdeg (arc seconds to degrees conversion</a>
+<a name="568"><span class="lineNum">     568 </span>            :       ! factor).  For obliq, first term is Berger 1978 epsilon star; second</a>
+<a name="569"><span class="lineNum">     569 </span>            :       ! term is series summation in degrees.</a>
+<a name="570"><span class="lineNum">     570 </span>            :   </a>
+<a name="571"><span class="lineNum">     571 </span><span class="lineCov">         16 :       obsum = 0.0_dbl_kind</span></a>
+<a name="572"><span class="lineNum">     572 </span><span class="lineCov">        768 :       do i = 1, poblen</span></a>
+<a name="573"><span class="lineNum">     573 </span><span class="lineCov">        188 :          obsum = obsum + obamp(i)*psecdeg*cos((obrate(i)*psecdeg*years + &amp;</span></a>
+<a name="574"><span class="lineNum">     574 </span><span class="lineCov">        768 :          &amp;       obphas(i))*degrad)</span></a>
+<a name="575"><span class="lineNum">     575 </span>            :       end do</a>
+<a name="576"><span class="lineNum">     576 </span><span class="lineCov">         16 :       obliq = 23.320556_dbl_kind + obsum</span></a>
+<a name="577"><span class="lineNum">     577 </span>            :  </a>
+<a name="578"><span class="lineNum">     578 </span>            :       ! Summation of cosine and sine series for computation of eccentricity </a>
+<a name="579"><span class="lineNum">     579 </span>            :       ! (eccen; e in Berger 1978) and fixed vernal equinox longitude of </a>
+<a name="580"><span class="lineNum">     580 </span>            :       ! perihelion (fvelp; pi in Berger 1978), which is used for computation </a>
+<a name="581"><span class="lineNum">     581 </span>            :       ! of moving vernal equinox longitude of perihelion.  Convert the rates, </a>
+<a name="582"><span class="lineNum">     582 </span>            :       ! which are in arc seconds, into degrees via multiplication by psecdeg.</a>
+<a name="583"><span class="lineNum">     583 </span>            :  </a>
+<a name="584"><span class="lineNum">     584 </span><span class="lineCov">         16 :       cossum = 0.0_dbl_kind</span></a>
+<a name="585"><span class="lineNum">     585 </span><span class="lineCov">        320 :       do i = 1, pecclen</span></a>
+<a name="586"><span class="lineNum">     586 </span><span class="lineCov">        320 :         cossum = cossum+ecamp(i)*cos((ecrate(i)*psecdeg*years+ecphas(i))*degrad)</span></a>
+<a name="587"><span class="lineNum">     587 </span>            :       end do</a>
+<a name="588"><span class="lineNum">     588 </span>            :  </a>
+<a name="589"><span class="lineNum">     589 </span><span class="lineCov">         16 :       sinsum = 0.0_dbl_kind</span></a>
+<a name="590"><span class="lineNum">     590 </span><span class="lineCov">        320 :       do i = 1, pecclen</span></a>
+<a name="591"><span class="lineNum">     591 </span><span class="lineCov">        320 :         sinsum = sinsum+ecamp(i)*sin((ecrate(i)*psecdeg*years+ecphas(i))*degrad)</span></a>
+<a name="592"><span class="lineNum">     592 </span>            :       end do</a>
+<a name="593"><span class="lineNum">     593 </span>            :  </a>
+<a name="594"><span class="lineNum">     594 </span>            :       ! Use summations to calculate eccentricity</a>
+<a name="595"><span class="lineNum">     595 </span>            :  </a>
+<a name="596"><span class="lineNum">     596 </span><span class="lineCov">         16 :       eccen2 = cossum*cossum + sinsum*sinsum</span></a>
+<a name="597"><span class="lineNum">     597 </span><span class="lineCov">         16 :       eccen  = sqrt(eccen2)</span></a>
+<a name="598"><span class="lineNum">     598 </span><span class="lineCov">         16 :       eccen3 = eccen2*eccen</span></a>
+<a name="599"><span class="lineNum">     599 </span>            :  </a>
+<a name="600"><span class="lineNum">     600 </span>            :       ! A series of cases for fvelp, which is in radians.</a>
+<a name="601"><span class="lineNum">     601 </span>            :          </a>
+<a name="602"><span class="lineNum">     602 </span><span class="lineCov">         16 :       if (abs(cossum) .le. 1.0E-8_dbl_kind) then</span></a>
+<a name="603"><span class="lineNum">     603 </span><span class="lineNoCov">          0 :         if (sinsum .eq. 0.0_dbl_kind) then</span></a>
+<a name="604"><span class="lineNum">     604 </span><span class="lineNoCov">          0 :           fvelp = 0.0_dbl_kind</span></a>
+<a name="605"><span class="lineNum">     605 </span><span class="lineNoCov">          0 :         else if (sinsum .lt. 0.0_dbl_kind) then</span></a>
+<a name="606"><span class="lineNum">     606 </span><span class="lineNoCov">          0 :           fvelp = 1.5_dbl_kind*pi</span></a>
+<a name="607"><span class="lineNum">     607 </span><span class="lineNoCov">          0 :         else if (sinsum .gt. 0.0_dbl_kind) then</span></a>
+<a name="608"><span class="lineNum">     608 </span><span class="lineNoCov">          0 :           fvelp = .5_dbl_kind*pi</span></a>
+<a name="609"><span class="lineNum">     609 </span>            :         endif</a>
+<a name="610"><span class="lineNum">     610 </span><span class="lineCov">         16 :       else if (cossum .lt. 0.0_dbl_kind) then</span></a>
+<a name="611"><span class="lineNum">     611 </span><span class="lineCov">         16 :         fvelp = atan(sinsum/cossum) + pi</span></a>
+<a name="612"><span class="lineNum">     612 </span><span class="lineNoCov">          0 :       else if (cossum .gt. 0.0_dbl_kind) then</span></a>
+<a name="613"><span class="lineNum">     613 </span><span class="lineNoCov">          0 :         if (sinsum .lt. 0.0_dbl_kind) then</span></a>
+<a name="614"><span class="lineNum">     614 </span><span class="lineNoCov">          0 :           fvelp = atan(sinsum/cossum) + 2.0_dbl_kind*pi</span></a>
+<a name="615"><span class="lineNum">     615 </span>            :         else</a>
+<a name="616"><span class="lineNum">     616 </span><span class="lineNoCov">          0 :           fvelp = atan(sinsum/cossum)</span></a>
+<a name="617"><span class="lineNum">     617 </span>            :         endif</a>
+<a name="618"><span class="lineNum">     618 </span>            :       endif</a>
+<a name="619"><span class="lineNum">     619 </span>            :  </a>
+<a name="620"><span class="lineNum">     620 </span>            :       ! Summation of sin series for computation of moving vernal equinox long</a>
+<a name="621"><span class="lineNum">     621 </span>            :       ! of perihelion (mvelp; omega bar in Berger 1978) in degrees.  For mvelp,</a>
+<a name="622"><span class="lineNum">     622 </span>            :       ! first term is fvelp in degrees; second term is Berger 1978 psi bar </a>
+<a name="623"><span class="lineNum">     623 </span>            :       ! times years and in degrees; third term is Berger 1978 zeta; fourth </a>
+<a name="624"><span class="lineNum">     624 </span>            :       ! term is series summation in degrees.  Convert the amplitudes and rates,</a>
+<a name="625"><span class="lineNum">     625 </span>            :       ! which are in arc seconds, into degrees via multiplication by psecdeg.  </a>
+<a name="626"><span class="lineNum">     626 </span>            :       ! Series summation plus second and third terms constitute Berger 1978</a>
+<a name="627"><span class="lineNum">     627 </span>            :       ! psi, which is the general precession.</a>
+<a name="628"><span class="lineNum">     628 </span>            :  </a>
+<a name="629"><span class="lineNum">     629 </span><span class="lineCov">         16 :       mvsum = 0.0_dbl_kind</span></a>
+<a name="630"><span class="lineNum">     630 </span><span class="lineCov">       1264 :       do i = 1, pmvelen</span></a>
+<a name="631"><span class="lineNum">     631 </span><span class="lineCov">        312 :         mvsum = mvsum + mvamp(i)*psecdeg*sin((mvrate(i)*psecdeg*years + &amp;</span></a>
+<a name="632"><span class="lineNum">     632 </span><span class="lineCov">       1264 :         &amp;       mvphas(i))*degrad)</span></a>
+<a name="633"><span class="lineNum">     633 </span>            :       end do</a>
+<a name="634"><span class="lineNum">     634 </span><span class="lineCov">         16 :       mvelp = fvelp/degrad + 50.439273_dbl_kind*psecdeg*years + 3.392506_dbl_kind + mvsum</span></a>
+<a name="635"><span class="lineNum">     635 </span>            :  </a>
+<a name="636"><span class="lineNum">     636 </span>            :       ! Cases to make sure mvelp is between 0 and 360.</a>
+<a name="637"><span class="lineNum">     637 </span>            :  </a>
+<a name="638"><span class="lineNum">     638 </span><span class="lineCov">         16 :       do while (mvelp .lt. 0.0_dbl_kind)</span></a>
+<a name="639"><span class="lineNum">     639 </span><span class="lineCov">         16 :         mvelp = mvelp + 360.0_dbl_kind</span></a>
+<a name="640"><span class="lineNum">     640 </span>            :       end do</a>
+<a name="641"><span class="lineNum">     641 </span><span class="lineCov">         16 :       do while (mvelp .ge. 360.0_dbl_kind)</span></a>
+<a name="642"><span class="lineNum">     642 </span><span class="lineCov">         16 :         mvelp = mvelp - 360.0_dbl_kind</span></a>
+<a name="643"><span class="lineNum">     643 </span>            :       end do</a>
+<a name="644"><span class="lineNum">     644 </span>            : </a>
+<a name="645"><span class="lineNum">     645 </span>            :    END IF  ! end of test on whether to calculate or use input orbital params</a>
+<a name="646"><span class="lineNum">     646 </span>            :  </a>
+<a name="647"><span class="lineNum">     647 </span>            :    ! Orbit needs the obliquity in radians</a>
+<a name="648"><span class="lineNum">     648 </span>            :  </a>
+<a name="649"><span class="lineNum">     649 </span><span class="lineCov">         16 :    obliqr = obliq*degrad</span></a>
+<a name="650"><span class="lineNum">     650 </span>            :  </a>
+<a name="651"><span class="lineNum">     651 </span>            :    ! 180 degrees must be added to mvelp since observations are made from the</a>
+<a name="652"><span class="lineNum">     652 </span>            :    ! earth and the sun is considered (wrongly for the algorithm) to go around</a>
+<a name="653"><span class="lineNum">     653 </span>            :    ! the earth. For a more graphic explanation see Appendix B in:</a>
+<a name="654"><span class="lineNum">     654 </span>            :    !</a>
+<a name="655"><span class="lineNum">     655 </span>            :    ! A. Berger, M. Loutre and C. Tricot. 1993.  Insolation and Earth Orbital</a>
+<a name="656"><span class="lineNum">     656 </span>            :    ! Periods.  J. of Geophysical Research 98:10,341-10,362.</a>
+<a name="657"><span class="lineNum">     657 </span>            :    !</a>
+<a name="658"><span class="lineNum">     658 </span>            :    ! Additionally, orbit will need this value in radians. So mvelp becomes</a>
+<a name="659"><span class="lineNum">     659 </span>            :    ! mvelpp (mvelp plus pi)</a>
+<a name="660"><span class="lineNum">     660 </span>            :  </a>
+<a name="661"><span class="lineNum">     661 </span><span class="lineCov">         16 :    mvelpp = (mvelp + 180._dbl_kind)*degrad</span></a>
+<a name="662"><span class="lineNum">     662 </span>            :  </a>
+<a name="663"><span class="lineNum">     663 </span>            :    ! Set up an argument used several times in lambm0 calculation ahead.</a>
+<a name="664"><span class="lineNum">     664 </span>            :  </a>
+<a name="665"><span class="lineNum">     665 </span><span class="lineCov">         16 :    beta = sqrt(1._dbl_kind - eccen2)</span></a>
+<a name="666"><span class="lineNum">     666 </span>            :  </a>
+<a name="667"><span class="lineNum">     667 </span>            :    ! The mean longitude at the vernal equinox (lambda m nought in Berger</a>
+<a name="668"><span class="lineNum">     668 </span>            :    ! 1978; in radians) is calculated from the following formula given in </a>
+<a name="669"><span class="lineNum">     669 </span>            :    ! Berger 1978.  At the vernal equinox the true longitude (lambda in Berger</a>
+<a name="670"><span class="lineNum">     670 </span>            :    ! 1978) is 0.</a>
+<a name="671"><span class="lineNum">     671 </span>            : </a>
+<a name="672"><span class="lineNum">     672 </span>            :    lambm0 = 2._dbl_kind*((.5_dbl_kind*eccen + .125_dbl_kind*eccen3)*(1._dbl_kind + beta)*sin(mvelpp)  &amp;</a>
+<a name="673"><span class="lineNum">     673 </span>            :    &amp;      - .250_dbl_kind*eccen2*(.5_dbl_kind    + beta)*sin(2._dbl_kind*mvelpp)            &amp;</a>
+<a name="674"><span class="lineNum">     674 </span><span class="lineCov">         16 :    &amp;      + .125_dbl_kind*eccen3*(1._dbl_kind/3._dbl_kind + beta)*sin(3._dbl_kind*mvelpp))</span></a>
+<a name="675"><span class="lineNum">     675 </span>            :  </a>
+<a name="676"><span class="lineNum">     676 </span><span class="lineCov">         16 :    if ( log_print ) then</span></a>
+<a name="677"><span class="lineNum">     677 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'------ Computed Orbital Parameters ------'</span></a>
+<a name="678"><span class="lineNum">     678 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="679"><span class="lineNum">     679 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Eccentricity      = ',eccen</span></a>
+<a name="680"><span class="lineNum">     680 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="681"><span class="lineNum">     681 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Obliquity (deg)   = ',obliq</span></a>
+<a name="682"><span class="lineNum">     682 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="683"><span class="lineNum">     683 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Obliquity (rad)   = ',obliqr</span></a>
+<a name="684"><span class="lineNum">     684 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="685"><span class="lineNum">     685 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Long of perh(deg) = ',mvelp</span></a>
+<a name="686"><span class="lineNum">     686 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="687"><span class="lineNum">     687 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Long of perh(rad) = ',mvelpp</span></a>
+<a name="688"><span class="lineNum">     688 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="689"><span class="lineNum">     689 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'Long at v.e.(rad) = ',lambm0</span></a>
+<a name="690"><span class="lineNum">     690 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="691"><span class="lineNum">     691 </span><span class="lineNoCov">          0 :      write(warnstr,F03) subname//'-----------------------------------------'</span></a>
+<a name="692"><span class="lineNum">     692 </span><span class="lineNoCov">          0 :      call icepack_warnings_add(warnstr)</span></a>
+<a name="693"><span class="lineNum">     693 </span>            :    end if</a>
+<a name="694"><span class="lineNum">     694 </span>            :  </a>
+<a name="695"><span class="lineNum">     695 </span><span class="lineCov">      26295 : END SUBROUTINE shr_orb_params</span></a>
+<a name="696"><span class="lineNum">     696 </span>            : </a>
+<a name="697"><span class="lineNum">     697 </span>            : !===============================================================================</a>
+<a name="698"><span class="lineNum">     698 </span>            : </a>
+<a name="699"><span class="lineNum">     699 </span><span class="lineCov">      98688 : SUBROUTINE shr_orb_decl(calday ,eccen ,mvelpp ,lambm0 ,obliqr ,delta ,eccf)</span></a>
+<a name="700"><span class="lineNum">     700 </span>            : </a>
+<a name="701"><span class="lineNum">     701 </span>            : !-------------------------------------------------------------------------------</a>
+<a name="702"><span class="lineNum">     702 </span>            : !</a>
+<a name="703"><span class="lineNum">     703 </span>            : ! Compute earth/orbit parameters using formula suggested by</a>
+<a name="704"><span class="lineNum">     704 </span>            : ! Duane Thresher.</a>
+<a name="705"><span class="lineNum">     705 </span>            : !</a>
+<a name="706"><span class="lineNum">     706 </span>            : !---------------------------Code history----------------------------------------</a>
+<a name="707"><span class="lineNum">     707 </span>            : !</a>
+<a name="708"><span class="lineNum">     708 </span>            : ! Original version:  Erik Kluzek</a>
+<a name="709"><span class="lineNum">     709 </span>            : ! Date:              Oct/1997</a>
+<a name="710"><span class="lineNum">     710 </span>            : !</a>
+<a name="711"><span class="lineNum">     711 </span>            : !-------------------------------------------------------------------------------</a>
+<a name="712"><span class="lineNum">     712 </span>            : </a>
+<a name="713"><span class="lineNum">     713 </span>            :    !------------------------------Arguments--------------------------------</a>
+<a name="714"><span class="lineNum">     714 </span>            :    real   (dbl_kind),intent(in)  :: calday ! Calendar day, including fraction</a>
+<a name="715"><span class="lineNum">     715 </span>            :    real   (dbl_kind),intent(in)  :: eccen  ! Eccentricity</a>
+<a name="716"><span class="lineNum">     716 </span>            :    real   (dbl_kind),intent(in)  :: obliqr ! Earths obliquity in radians</a>
+<a name="717"><span class="lineNum">     717 </span>            :    real   (dbl_kind),intent(in)  :: lambm0 ! Mean long of perihelion at the </a>
+<a name="718"><span class="lineNum">     718 </span>            :                                               ! vernal equinox (radians)</a>
+<a name="719"><span class="lineNum">     719 </span>            :    real   (dbl_kind),intent(in)  :: mvelpp ! moving vernal equinox longitude</a>
+<a name="720"><span class="lineNum">     720 </span>            :                                               ! of perihelion plus pi (radians)</a>
+<a name="721"><span class="lineNum">     721 </span>            :    real   (dbl_kind),intent(out) :: delta  ! Solar declination angle in rad</a>
+<a name="722"><span class="lineNum">     722 </span>            :    real   (dbl_kind),intent(out) :: eccf   ! Earth-sun distance factor (ie. (1/r)**2)</a>
+<a name="723"><span class="lineNum">     723 </span>            :  </a>
+<a name="724"><span class="lineNum">     724 </span>            :    !---------------------------Local variables-----------------------------</a>
+<a name="725"><span class="lineNum">     725 </span>            :    real   (dbl_kind),parameter :: dayspy = 365.0_dbl_kind  ! days per year</a>
+<a name="726"><span class="lineNum">     726 </span>            :    real   (dbl_kind),parameter :: ve     = 80.5_dbl_kind   ! Calday of vernal equinox</a>
+<a name="727"><span class="lineNum">     727 </span>            :                                                      ! assumes Jan 1 = calday 1</a>
+<a name="728"><span class="lineNum">     728 </span>            :  </a>
+<a name="729"><span class="lineNum">     729 </span><span class="lineCov">      26283 :    real   (dbl_kind) ::   lambm  ! Lambda m, mean long of perihelion (rad)</span></a>
+<a name="730"><span class="lineNum">     730 </span><span class="lineCov">      26283 :    real   (dbl_kind) ::   lmm    ! Intermediate argument involving lambm</span></a>
+<a name="731"><span class="lineNum">     731 </span><span class="lineCov">      26283 :    real   (dbl_kind) ::   lamb   ! Lambda, the earths long of perihelion</span></a>
+<a name="732"><span class="lineNum">     732 </span><span class="lineCov">      26283 :    real   (dbl_kind) ::   invrho ! Inverse normalized sun/earth distance</span></a>
+<a name="733"><span class="lineNum">     733 </span><span class="lineCov">      26283 :    real   (dbl_kind) ::   sinl   ! Sine of lmm</span></a>
+<a name="734"><span class="lineNum">     734 </span>            :  </a>
+<a name="735"><span class="lineNum">     735 </span>            :    character(len=*),parameter :: subname='(shr_orb_decl)'</a>
+<a name="736"><span class="lineNum">     736 </span>            : </a>
+<a name="737"><span class="lineNum">     737 </span>            :    ! Compute eccentricity factor and solar declination using</a>
+<a name="738"><span class="lineNum">     738 </span>            :    ! day value where a round day (such as 213.0) refers to 0z at</a>
+<a name="739"><span class="lineNum">     739 </span>            :    ! Greenwich longitude.</a>
+<a name="740"><span class="lineNum">     740 </span>            :    !</a>
+<a name="741"><span class="lineNum">     741 </span>            :    ! Use formulas from Berger, Andre 1978: Long-Term Variations of Daily</a>
+<a name="742"><span class="lineNum">     742 </span>            :    ! Insolation and Quaternary Climatic Changes. J. of the Atmo. Sci.</a>
+<a name="743"><span class="lineNum">     743 </span>            :    ! 35:2362-2367.</a>
+<a name="744"><span class="lineNum">     744 </span>            :    !</a>
+<a name="745"><span class="lineNum">     745 </span>            :    ! To get the earths true longitude (position in orbit; lambda in Berger </a>
+<a name="746"><span class="lineNum">     746 </span>            :    ! 1978) which is necessary to find the eccentricity factor and declination,</a>
+<a name="747"><span class="lineNum">     747 </span>            :    ! must first calculate the mean longitude (lambda m in Berger 1978) at</a>
+<a name="748"><span class="lineNum">     748 </span>            :    ! the present day.  This is done by adding to lambm0 (the mean longitude</a>
+<a name="749"><span class="lineNum">     749 </span>            :    ! at the vernal equinox, set as March 21 at noon, when lambda=0; in radians)</a>
+<a name="750"><span class="lineNum">     750 </span>            :    ! an increment (delta lambda m in Berger 1978) that is the number of</a>
+<a name="751"><span class="lineNum">     751 </span>            :    ! days past or before (a negative increment) the vernal equinox divided by</a>
+<a name="752"><span class="lineNum">     752 </span>            :    ! the days in a model year times the 2*pi radians in a complete orbit.</a>
+<a name="753"><span class="lineNum">     753 </span>            :  </a>
+<a name="754"><span class="lineNum">     754 </span><span class="lineCov">      98688 :    lambm = lambm0 + (calday - ve)*2._dbl_kind*pi/dayspy</span></a>
+<a name="755"><span class="lineNum">     755 </span><span class="lineCov">      98688 :    lmm   = lambm  - mvelpp</span></a>
+<a name="756"><span class="lineNum">     756 </span>            :  </a>
+<a name="757"><span class="lineNum">     757 </span>            :    ! The earths true longitude, in radians, is then found from</a>
+<a name="758"><span class="lineNum">     758 </span>            :    ! the formula in Berger 1978:</a>
+<a name="759"><span class="lineNum">     759 </span>            :  </a>
+<a name="760"><span class="lineNum">     760 </span><span class="lineCov">      98688 :    sinl  = sin(lmm)</span></a>
+<a name="761"><span class="lineNum">     761 </span>            :    lamb  = lambm  + eccen*(2._dbl_kind*sinl + eccen*(1.25_dbl_kind*sin(2._dbl_kind*lmm)  &amp;</a>
+<a name="762"><span class="lineNum">     762 </span><span class="lineCov">      98688 :    &amp;     + eccen*((13.0_dbl_kind/12.0_dbl_kind)*sin(3._dbl_kind*lmm) - 0.25_dbl_kind*sinl)))</span></a>
+<a name="763"><span class="lineNum">     763 </span>            :  </a>
+<a name="764"><span class="lineNum">     764 </span>            :    ! Using the obliquity, eccentricity, moving vernal equinox longitude of</a>
+<a name="765"><span class="lineNum">     765 </span>            :    ! perihelion (plus), and earths true longitude, the declination (delta)</a>
+<a name="766"><span class="lineNum">     766 </span>            :    ! and the normalized earth/sun distance (rho in Berger 1978; actually inverse</a>
+<a name="767"><span class="lineNum">     767 </span>            :    ! rho will be used), and thus the eccentricity factor (eccf), can be </a>
+<a name="768"><span class="lineNum">     768 </span>            :    ! calculated from formulas given in Berger 1978.</a>
+<a name="769"><span class="lineNum">     769 </span>            :  </a>
+<a name="770"><span class="lineNum">     770 </span><span class="lineCov">      98688 :    invrho = (1._dbl_kind + eccen*cos(lamb - mvelpp)) / (1._dbl_kind - eccen*eccen)</span></a>
+<a name="771"><span class="lineNum">     771 </span>            :  </a>
+<a name="772"><span class="lineNum">     772 </span>            :    ! Set solar declination and eccentricity factor</a>
+<a name="773"><span class="lineNum">     773 </span>            :  </a>
+<a name="774"><span class="lineNum">     774 </span><span class="lineCov">      98688 :    delta  = asin(sin(obliqr)*sin(lamb))</span></a>
+<a name="775"><span class="lineNum">     775 </span><span class="lineCov">      98688 :    eccf   = invrho*invrho</span></a>
+<a name="776"><span class="lineNum">     776 </span>            :  </a>
+<a name="777"><span class="lineNum">     777 </span><span class="lineCov">      98688 :    return</span></a>
+<a name="778"><span class="lineNum">     778 </span>            :  </a>
+<a name="779"><span class="lineNum">     779 </span>            : END SUBROUTINE shr_orb_decl</a>
+<a name="780"><span class="lineNum">     780 </span>            : #endif</a>
+<a name="781"><span class="lineNum">     781 </span>            : </a>
+<a name="782"><span class="lineNum">     782 </span>            : !=======================================================================</a>
+<a name="783"><span class="lineNum">     783 </span>            :  </a>
+<a name="784"><span class="lineNum">     784 </span>            :       end module icepack_orbital</a>
+<a name="785"><span class="lineNum">     785 </span>            :  </a>
+<a name="786"><span class="lineNum">     786 </span>            : !=======================================================================</a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.14-6-g40580cd</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
