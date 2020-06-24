@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 200624-005927:0a37e99f7c:3:base,travis,quick - columnphysics/icepack_intfc.F90</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">columnphysics</a> - icepack_intfc.F90<span style="font-size: 80%;"> (source / <a href="icepack_intfc.F90.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">200624-005927:0a37e99f7c:3:base,travis,quick</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.00 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2020-06-23 19:19:26</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.00 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : !=======================================================================</a>
+<a name="2"><span class="lineNum">       2 </span>            : ! Copyright (c) 2020, Triad National Security, LLC </a>
+<a name="3"><span class="lineNum">       3 </span>            : ! All rights reserved.</a>
+<a name="4"><span class="lineNum">       4 </span>            : !                </a>
+<a name="5"><span class="lineNum">       5 </span>            : ! Copyright 2020. Triad National Security, LLC. This software was </a>
+<a name="6"><span class="lineNum">       6 </span>            : ! produced under U.S. Government contract DE-AC52-06NA25396 for Los </a>
+<a name="7"><span class="lineNum">       7 </span>            : ! Alamos National Laboratory (LANL), which is operated by Triad</a>
+<a name="8"><span class="lineNum">       8 </span>            : ! National Security, LLC for the U.S. Department of Energy. The U.S.  </a>
+<a name="9"><span class="lineNum">       9 </span>            : ! Government has rights to use, reproduce, and distribute this software.  </a>
+<a name="10"><span class="lineNum">      10 </span>            : ! NEITHER THE GOVERNMENT NOR TRIAD NATIONAL SECURITY, LLC MAKES ANY  </a>
+<a name="11"><span class="lineNum">      11 </span>            : ! WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF</a>
+<a name="12"><span class="lineNum">      12 </span>            : ! THIS SOFTWARE. If software is modified to produce derivative works, </a>
+<a name="13"><span class="lineNum">      13 </span>            : ! such modified software should be clearly marked, so as not to confuse </a>
+<a name="14"><span class="lineNum">      14 </span>            : ! it with the version available from LANL.</a>
+<a name="15"><span class="lineNum">      15 </span>            : !</a>
+<a name="16"><span class="lineNum">      16 </span>            : ! The full license and distribution policy are available from</a>
+<a name="17"><span class="lineNum">      17 </span>            : ! https://github.com/CICE-Consortium</a>
+<a name="18"><span class="lineNum">      18 </span>            : ! </a>
+<a name="19"><span class="lineNum">      19 </span>            : !=======================================================================</a>
+<a name="20"><span class="lineNum">      20 </span>            : !</a>
+<a name="21"><span class="lineNum">      21 </span>            : ! authors: Elizabeth C. Hunke, LANL</a>
+<a name="22"><span class="lineNum">      22 </span>            : !</a>
+<a name="23"><span class="lineNum">      23 </span>            : </a>
+<a name="24"><span class="lineNum">      24 </span>            : !autodocument_start icepack_intfc.F90</a>
+<a name="25"><span class="lineNum">      25 </span>            : ! public parameters and interface routines for the icepack columnpackage code</a>
+<a name="26"><span class="lineNum">      26 </span>            : </a>
+<a name="27"><span class="lineNum">      27 </span>            :       module icepack_intfc</a>
+<a name="28"><span class="lineNum">      28 </span>            : </a>
+<a name="29"><span class="lineNum">      29 </span>            :       use icepack_kinds, only: icepack_char_len  =&gt; char_len</a>
+<a name="30"><span class="lineNum">      30 </span>            :       use icepack_kinds, only: icepack_char_len_long  =&gt; char_len_long</a>
+<a name="31"><span class="lineNum">      31 </span>            :       use icepack_kinds, only: icepack_log_kind  =&gt; log_kind</a>
+<a name="32"><span class="lineNum">      32 </span>            :       use icepack_kinds, only: icepack_int_kind  =&gt; int_kind</a>
+<a name="33"><span class="lineNum">      33 </span>            :       use icepack_kinds, only: icepack_int8_kind =&gt; int8_kind</a>
+<a name="34"><span class="lineNum">      34 </span>            :       use icepack_kinds, only: icepack_real_kind =&gt; real_kind</a>
+<a name="35"><span class="lineNum">      35 </span>            :       use icepack_kinds, only: icepack_dbl_kind  =&gt; dbl_kind</a>
+<a name="36"><span class="lineNum">      36 </span>            :       use icepack_kinds, only: icepack_r16_kind  =&gt; r16_kind</a>
+<a name="37"><span class="lineNum">      37 </span>            : </a>
+<a name="38"><span class="lineNum">      38 </span>            :       use icepack_tracers,    only: icepack_max_nbtrcr =&gt; max_nbtrcr</a>
+<a name="39"><span class="lineNum">      39 </span>            :       use icepack_tracers,    only: icepack_max_algae  =&gt; max_algae</a>
+<a name="40"><span class="lineNum">      40 </span>            :       use icepack_tracers,    only: icepack_max_dic    =&gt; max_dic</a>
+<a name="41"><span class="lineNum">      41 </span>            :       use icepack_tracers,    only: icepack_max_doc    =&gt; max_doc</a>
+<a name="42"><span class="lineNum">      42 </span>            :       use icepack_tracers,    only: icepack_max_don    =&gt; max_don</a>
+<a name="43"><span class="lineNum">      43 </span>            :       use icepack_tracers,    only: icepack_max_fe     =&gt; max_fe</a>
+<a name="44"><span class="lineNum">      44 </span>            :       use icepack_tracers,    only: icepack_max_aero   =&gt; max_aero</a>
+<a name="45"><span class="lineNum">      45 </span>            :       use icepack_tracers,    only: icepack_max_iso    =&gt; max_iso</a>
+<a name="46"><span class="lineNum">      46 </span>            :       use icepack_tracers,    only: icepack_nmodal1    =&gt; nmodal1</a>
+<a name="47"><span class="lineNum">      47 </span>            :       use icepack_tracers,    only: icepack_nmodal2    =&gt; nmodal2</a>
+<a name="48"><span class="lineNum">      48 </span>            :       use icepack_parameters, only: icepack_nspint     =&gt; nspint</a>
+<a name="49"><span class="lineNum">      49 </span>            : </a>
+<a name="50"><span class="lineNum">      50 </span>            :       use icepack_parameters, only: icepack_init_parameters</a>
+<a name="51"><span class="lineNum">      51 </span>            :       use icepack_parameters, only: icepack_query_parameters</a>
+<a name="52"><span class="lineNum">      52 </span>            :       use icepack_parameters, only: icepack_write_parameters</a>
+<a name="53"><span class="lineNum">      53 </span>            :       use icepack_parameters, only: icepack_recompute_constants</a>
+<a name="54"><span class="lineNum">      54 </span>            :       use icepack_parameters, only: nspint, secday, spval_const</a>
+<a name="55"><span class="lineNum">      55 </span>            :       use icepack_parameters, only: c0, c1, c1p5, c2, c3, c4, c5, c6, c8</a>
+<a name="56"><span class="lineNum">      56 </span>            :       use icepack_parameters, only: c10, c15, c16, c20, c25, c100, c1000</a>
+<a name="57"><span class="lineNum">      57 </span>            :       use icepack_parameters, only: p001, p01, p1, p2, p4, p5, p6, p05</a>
+<a name="58"><span class="lineNum">      58 </span>            :       use icepack_parameters, only: p15, p25, p75, p333, p666</a>
+<a name="59"><span class="lineNum">      59 </span>            : </a>
+<a name="60"><span class="lineNum">      60 </span>            :       use icepack_tracers, only: icepack_compute_tracers</a>
+<a name="61"><span class="lineNum">      61 </span>            :       use icepack_tracers, only: icepack_init_tracer_flags</a>
+<a name="62"><span class="lineNum">      62 </span>            :       use icepack_tracers, only: icepack_query_tracer_flags</a>
+<a name="63"><span class="lineNum">      63 </span>            :       use icepack_tracers, only: icepack_write_tracer_flags</a>
+<a name="64"><span class="lineNum">      64 </span>            :       use icepack_tracers, only: icepack_init_tracer_indices</a>
+<a name="65"><span class="lineNum">      65 </span>            :       use icepack_tracers, only: icepack_query_tracer_indices</a>
+<a name="66"><span class="lineNum">      66 </span>            :       use icepack_tracers, only: icepack_write_tracer_indices</a>
+<a name="67"><span class="lineNum">      67 </span>            :       use icepack_tracers, only: icepack_init_tracer_sizes</a>
+<a name="68"><span class="lineNum">      68 </span>            :       use icepack_tracers, only: icepack_query_tracer_sizes</a>
+<a name="69"><span class="lineNum">      69 </span>            :       use icepack_tracers, only: icepack_write_tracer_sizes</a>
+<a name="70"><span class="lineNum">      70 </span>            : </a>
+<a name="71"><span class="lineNum">      71 </span>            :       use icepack_itd, only: icepack_init_itd</a>
+<a name="72"><span class="lineNum">      72 </span>            :       use icepack_itd, only: icepack_init_itd_hist</a>
+<a name="73"><span class="lineNum">      73 </span>            :       use icepack_itd, only: icepack_aggregate</a>
+<a name="74"><span class="lineNum">      74 </span>            : </a>
+<a name="75"><span class="lineNum">      75 </span>            :       use icepack_fsd, only: icepack_init_fsd_bounds</a>
+<a name="76"><span class="lineNum">      76 </span>            :       use icepack_fsd, only: icepack_init_fsd</a>
+<a name="77"><span class="lineNum">      77 </span>            :       use icepack_fsd, only: icepack_cleanup_fsd</a>
+<a name="78"><span class="lineNum">      78 </span>            : </a>
+<a name="79"><span class="lineNum">      79 </span>            :       use icepack_mechred, only: icepack_step_ridge</a>
+<a name="80"><span class="lineNum">      80 </span>            :       use icepack_mechred, only: icepack_ice_strength</a>
+<a name="81"><span class="lineNum">      81 </span>            : </a>
+<a name="82"><span class="lineNum">      82 </span>            :       use icepack_wavefracspec, only: icepack_init_wave</a>
+<a name="83"><span class="lineNum">      83 </span>            :       use icepack_wavefracspec, only: icepack_step_wavefracture</a>
+<a name="84"><span class="lineNum">      84 </span>            : </a>
+<a name="85"><span class="lineNum">      85 </span>            :       use icepack_shortwave, only: icepack_prep_radiation</a>
+<a name="86"><span class="lineNum">      86 </span>            :       use icepack_shortwave, only: icepack_step_radiation</a>
+<a name="87"><span class="lineNum">      87 </span>            : </a>
+<a name="88"><span class="lineNum">      88 </span>            :       use icepack_brine, only: icepack_init_hbrine</a>
+<a name="89"><span class="lineNum">      89 </span>            :       use icepack_brine, only: icepack_init_zsalinity</a>
+<a name="90"><span class="lineNum">      90 </span>            : </a>
+<a name="91"><span class="lineNum">      91 </span>            :       use icepack_zbgc , only: icepack_init_bgc</a>
+<a name="92"><span class="lineNum">      92 </span>            :       use icepack_zbgc , only: icepack_init_zbgc</a>
+<a name="93"><span class="lineNum">      93 </span>            :       use icepack_zbgc , only: icepack_biogeochemistry</a>
+<a name="94"><span class="lineNum">      94 </span>            :       use icepack_zbgc , only: icepack_init_ocean_bio</a>
+<a name="95"><span class="lineNum">      95 </span>            :       use icepack_zbgc , only: icepack_load_ocean_bio_array</a>
+<a name="96"><span class="lineNum">      96 </span>            : </a>
+<a name="97"><span class="lineNum">      97 </span>            :       use icepack_atmo , only: icepack_atm_boundary</a>
+<a name="98"><span class="lineNum">      98 </span>            :       use icepack_ocean, only: icepack_ocn_mixed_layer</a>
+<a name="99"><span class="lineNum">      99 </span>            : </a>
+<a name="100"><span class="lineNum">     100 </span>            :       use icepack_orbital       , only: icepack_init_orbit</a>
+<a name="101"><span class="lineNum">     101 </span>            :       use icepack_orbital       , only: icepack_query_orbit</a>
+<a name="102"><span class="lineNum">     102 </span>            : </a>
+<a name="103"><span class="lineNum">     103 </span>            :       use icepack_therm_vertical, only: icepack_step_therm1</a>
+<a name="104"><span class="lineNum">     104 </span>            :       use icepack_therm_itd     , only: icepack_step_therm2</a>
+<a name="105"><span class="lineNum">     105 </span>            :       use icepack_therm_shared  , only: icepack_ice_temperature</a>
+<a name="106"><span class="lineNum">     106 </span>            :       use icepack_therm_shared  , only: icepack_snow_temperature</a>
+<a name="107"><span class="lineNum">     107 </span>            :       use icepack_therm_shared  , only: icepack_liquidus_temperature</a>
+<a name="108"><span class="lineNum">     108 </span>            :       use icepack_therm_shared  , only: icepack_sea_freezing_temperature</a>
+<a name="109"><span class="lineNum">     109 </span>            :       use icepack_therm_shared  , only: icepack_enthalpy_snow</a>
+<a name="110"><span class="lineNum">     110 </span>            :       use icepack_therm_shared  , only: icepack_init_thermo</a>
+<a name="111"><span class="lineNum">     111 </span>            :       use icepack_therm_shared  , only: icepack_init_trcr</a>
+<a name="112"><span class="lineNum">     112 </span>            : </a>
+<a name="113"><span class="lineNum">     113 </span>            :       use icepack_mushy_physics , only: icepack_mushy_density_brine</a>
+<a name="114"><span class="lineNum">     114 </span>            :       use icepack_mushy_physics , only: icepack_mushy_liquid_fraction</a>
+<a name="115"><span class="lineNum">     115 </span>            :       use icepack_mushy_physics , only: icepack_mushy_temperature_mush</a>
+<a name="116"><span class="lineNum">     116 </span>            : </a>
+<a name="117"><span class="lineNum">     117 </span>            :       use icepack_warnings, only: icepack_warnings_clear</a>
+<a name="118"><span class="lineNum">     118 </span>            :       use icepack_warnings, only: icepack_warnings_print</a>
+<a name="119"><span class="lineNum">     119 </span>            :       use icepack_warnings, only: icepack_warnings_flush</a>
+<a name="120"><span class="lineNum">     120 </span>            :       use icepack_warnings, only: icepack_warnings_aborted</a>
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<a name="122"><span class="lineNum">     122 </span>            : !autodocument_end icepack_intfc.F90</a>
+<a name="123"><span class="lineNum">     123 </span>            : </a>
+<a name="124"><span class="lineNum">     124 </span>            :       implicit none</a>
+<a name="125"><span class="lineNum">     125 </span>            : </a>
+<a name="126"><span class="lineNum">     126 </span>            :       public </a>
+<a name="127"><span class="lineNum">     127 </span>            : </a>
+<a name="128"><span class="lineNum">     128 </span>            :       public :: icepack_configure</a>
+<a name="129"><span class="lineNum">     129 </span>            : </a>
+<a name="130"><span class="lineNum">     130 </span>            : !=======================================================================</a>
+<a name="131"><span class="lineNum">     131 </span>            :       contains</a>
+<a name="132"><span class="lineNum">     132 </span>            : !=======================================================================</a>
+<a name="133"><span class="lineNum">     133 </span>            : </a>
+<a name="134"><span class="lineNum">     134 </span>            :       ! This subroutine should be called before any part of columnphysics</a>
+<a name="135"><span class="lineNum">     135 </span>            :       ! is used.</a>
+<a name="136"><span class="lineNum">     136 </span>            : </a>
+<a name="137"><span class="lineNum">     137 </span><span class="lineCov">         45 :       subroutine icepack_configure()</span></a>
+<a name="138"><span class="lineNum">     138 </span>            : </a>
+<a name="139"><span class="lineNum">     139 </span>            :       use icepack_warnings, only: warnstr, icepack_warnings_add</a>
+<a name="140"><span class="lineNum">     140 </span>            :       use icepack_warnings, only: icepack_warnings_setabort, icepack_warnings_aborted</a>
+<a name="141"><span class="lineNum">     141 </span>            : </a>
+<a name="142"><span class="lineNum">     142 </span>            :       character(len=*),parameter :: subname='(icepack_configure)'</a>
+<a name="143"><span class="lineNum">     143 </span>            : </a>
+<a name="144"><span class="lineNum">     144 </span><span class="lineCov">         45 :         call icepack_warnings_setabort(.false.,__FILE__,__LINE__)</span></a>
+<a name="145"><span class="lineNum">     145 </span><span class="lineCov">         45 :         call icepack_recompute_constants()</span></a>
+<a name="146"><span class="lineNum">     146 </span><span class="lineCov">         45 :         if (icepack_warnings_aborted(subname)) return</span></a>
+<a name="147"><span class="lineNum">     147 </span>            : </a>
+<a name="148"><span class="lineNum">     148 </span>            :       end subroutine icepack_configure</a>
+<a name="149"><span class="lineNum">     149 </span>            : </a>
+<a name="150"><span class="lineNum">     150 </span>            : !=======================================================================</a>
+<a name="151"><span class="lineNum">     151 </span>            : </a>
+<a name="152"><span class="lineNum">     152 </span>            :       end module icepack_intfc</a>
+<a name="153"><span class="lineNum">     153 </span>            : </a>
+<a name="154"><span class="lineNum">     154 </span>            : !=======================================================================</a>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.14-6-g40580cd</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
