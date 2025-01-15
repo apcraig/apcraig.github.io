@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 250115-170714:736c1771a8:1:quick - cicecore/shared/ice_restart_shared.F90</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">cicecore/shared</a> - ice_restart_shared.F90<span style="font-size: 80%;"> (source / <a href="ice_restart_shared.F90.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">250115-170714:736c1771a8:1:quick</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">100.00&nbsp;%</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2025-01-15 10:18:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.00&nbsp;%</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : !=======================================================================</span>
+<span id="L2"><span class="lineNum">       2</span>              : </span>
+<span id="L3"><span class="lineNum">       3</span>              :       module ice_restart_shared</span>
+<span id="L4"><span class="lineNum">       4</span>              : </span>
+<span id="L5"><span class="lineNum">       5</span>              :       use ice_kinds_mod</span>
+<span id="L6"><span class="lineNum">       6</span>              : </span>
+<span id="L7"><span class="lineNum">       7</span>              :       implicit none</span>
+<span id="L8"><span class="lineNum">       8</span>              :       private</span>
+<span id="L9"><span class="lineNum">       9</span>              :       public :: lenstr</span>
+<span id="L10"><span class="lineNum">      10</span>              : </span>
+<span id="L11"><span class="lineNum">      11</span>              :       logical (kind=log_kind), public :: &amp;</span>
+<span id="L12"><span class="lineNum">      12</span>              :          restart    , &amp;   ! if true, initialize using restart file instead of defaults   ! LCOV_EXCL_LINE</span>
+<span id="L13"><span class="lineNum">      13</span>              :          restart_ext, &amp;   ! if true, read/write extended grid (with ghost cells)   ! LCOV_EXCL_LINE</span>
+<span id="L14"><span class="lineNum">      14</span>              :          restart_coszen, &amp;   ! if true, read/write coszen   ! LCOV_EXCL_LINE</span>
+<span id="L15"><span class="lineNum">      15</span>              :          use_restart_time ! if true, use time written in core restart file</span>
+<span id="L16"><span class="lineNum">      16</span>              : </span>
+<span id="L17"><span class="lineNum">      17</span>              :       character (len=char_len), public :: &amp;</span>
+<span id="L18"><span class="lineNum">      18</span>              :          runtype           ! initial, continue, hybrid, branch</span>
+<span id="L19"><span class="lineNum">      19</span>              : </span>
+<span id="L20"><span class="lineNum">      20</span>              :       character (len=char_len_long), public :: &amp;</span>
+<span id="L21"><span class="lineNum">      21</span>              :          restart_file  , &amp; ! output file for restart dump   ! LCOV_EXCL_LINE</span>
+<span id="L22"><span class="lineNum">      22</span>              :          restart_dir   , &amp; ! directory name for restart dump   ! LCOV_EXCL_LINE</span>
+<span id="L23"><span class="lineNum">      23</span>              :          runid             ! identifier for CESM coupled run or bering</span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              :       character (len=char_len_long), public :: &amp;</span>
+<span id="L26"><span class="lineNum">      26</span>              :          pointer_file      ! input pointer file for restarts</span>
+<span id="L27"><span class="lineNum">      27</span>              : </span>
+<span id="L28"><span class="lineNum">      28</span>              :       character (len=char_len), public :: &amp;</span>
+<span id="L29"><span class="lineNum">      29</span>              :          restart_format      , &amp; ! format of restart files 'nc'   ! LCOV_EXCL_LINE</span>
+<span id="L30"><span class="lineNum">      30</span>              :          restart_rearranger      ! restart file rearranger, box or subset for pio</span>
+<span id="L31"><span class="lineNum">      31</span>              : </span>
+<span id="L32"><span class="lineNum">      32</span>              :       integer (kind=int_kind), public :: &amp;</span>
+<span id="L33"><span class="lineNum">      33</span>              :          restart_iotasks     , &amp; ! iotasks, root, stride defines io pes for pio   ! LCOV_EXCL_LINE</span>
+<span id="L34"><span class="lineNum">      34</span>              :          restart_root        , &amp; ! iotasks, root, stride defines io pes for pio   ! LCOV_EXCL_LINE</span>
+<span id="L35"><span class="lineNum">      35</span>              :          restart_stride      , &amp; ! iotasks, root, stride defines io pes for pio   ! LCOV_EXCL_LINE</span>
+<span id="L36"><span class="lineNum">      36</span>              :          restart_deflate     , &amp; ! compression level for hdf5/netcdf4   ! LCOV_EXCL_LINE</span>
+<span id="L37"><span class="lineNum">      37</span>              :          restart_chunksize(2)    ! chunksize for hdf5/netcdf4</span>
+<span id="L38"><span class="lineNum">      38</span>              : </span>
+<span id="L39"><span class="lineNum">      39</span>              : </span>
+<span id="L40"><span class="lineNum">      40</span>              : !=======================================================================</span>
+<span id="L41"><span class="lineNum">      41</span>              : </span>
+<span id="L42"><span class="lineNum">      42</span>              :       contains</span>
+<span id="L43"><span class="lineNum">      43</span>              : </span>
+<span id="L44"><span class="lineNum">      44</span>              : !=======================================================================</span>
+<span id="L45"><span class="lineNum">      45</span>              : </span>
+<span id="L46"><span class="lineNum">      46</span>              : ! Compute length of string by finding first non-blank</span>
+<span id="L47"><span class="lineNum">      47</span>              : ! character from the right.</span>
+<span id="L48"><span class="lineNum">      48</span>              : </span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC tlaBgGNC">         127 :       integer function lenstr(label)</span></span>
+<span id="L50"><span class="lineNum">      50</span>              : </span>
+<span id="L51"><span class="lineNum">      51</span>              :       character(len=*) :: label</span>
+<span id="L52"><span class="lineNum">      52</span>              : </span>
+<span id="L53"><span class="lineNum">      53</span>              :       character(len=*),parameter :: subname='(lenstr)'</span>
+<span id="L54"><span class="lineNum">      54</span>              : </span>
+<span id="L55"><span class="lineNum">      55</span>              :       ! local variables</span>
+<span id="L56"><span class="lineNum">      56</span>              : </span>
+<span id="L57"><span class="lineNum">      57</span>              :       integer (kind=int_kind) :: &amp;</span>
+<span id="L58"><span class="lineNum">      58</span>              :          length, &amp; ! length of character string   ! LCOV_EXCL_LINE</span>
+<span id="L59"><span class="lineNum">      59</span>              :          n         ! loop index</span>
+<span id="L60"><span class="lineNum">      60</span>              : </span>
+<span id="L61"><span class="lineNum">      61</span> <span class="tlaGNC">         127 :       length = len(label)</span></span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">       31518 :       do n=length,1,-1</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">       31518 :         if( label(n:n) /= ' ' ) exit</span></span>
+<span id="L64"><span class="lineNum">      64</span>              :       enddo</span>
+<span id="L65"><span class="lineNum">      65</span> <span class="tlaGNC">         127 :       lenstr = n</span></span>
+<span id="L66"><span class="lineNum">      66</span>              : </span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">         254 :       end function lenstr</span></span>
+<span id="L68"><span class="lineNum">      68</span>              : </span>
+<span id="L69"><span class="lineNum">      69</span>              : !=======================================================================</span>
+<span id="L70"><span class="lineNum">      70</span>              : </span>
+<span id="L71"><span class="lineNum">      71</span>              :       end module ice_restart_shared</span>
+<span id="L72"><span class="lineNum">      72</span>              : </span>
+<span id="L73"><span class="lineNum">      73</span>              : !=======================================================================</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
