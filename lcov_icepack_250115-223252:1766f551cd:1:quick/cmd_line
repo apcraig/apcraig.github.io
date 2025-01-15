@@ -1,0 +1,1 @@
+genhtml -o ./lcov_icepack_250115-223252:1766f551cd:1:quick --precision 2 -t 250115-223252:1766f551cd:1:quick total.info
