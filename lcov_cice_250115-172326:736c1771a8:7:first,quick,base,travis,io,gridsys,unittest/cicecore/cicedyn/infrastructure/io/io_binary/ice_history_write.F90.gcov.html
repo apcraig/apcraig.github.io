@@ -1,0 +1,479 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 250115-172326:736c1771a8:7:first,quick,base,travis,io,gridsys,unittest - cicecore/cicedyn/infrastructure/io/io_binary/ice_history_write.F90</title>
+  <link rel="stylesheet" type="text/css" href="../../../../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../../../../index.html">top level</a> - <a href="index.html">cicecore/cicedyn/infrastructure/io/io_binary</a> - ice_history_write.F90<span style="font-size: 80%;"> (source / <a href="ice_history_write.F90.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">250115-172326:736c1771a8:7:first,quick,base,travis,io,gridsys,unittest</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">91.91&nbsp;%</td>
+            <td class="headerCovTableEntry">173</td>
+            <td class="headerCovTableEntry">159</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2025-01-15 16:42:12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.00&nbsp;%</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+          </tr>
+                  <tr><td><img src="../../../../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../../../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : !=======================================================================</span>
+<span id="L2"><span class="lineNum">       2</span>              : !</span>
+<span id="L3"><span class="lineNum">       3</span>              : ! Writes history in binary format</span>
+<span id="L4"><span class="lineNum">       4</span>              : !</span>
+<span id="L5"><span class="lineNum">       5</span>              : ! authors Tony Craig and Bruce Briegleb, NCAR</span>
+<span id="L6"><span class="lineNum">       6</span>              : !         Elizabeth C. Hunke and William H. Lipscomb, LANL</span>
+<span id="L7"><span class="lineNum">       7</span>              : !         C. M. Bitz, UW</span>
+<span id="L8"><span class="lineNum">       8</span>              : !</span>
+<span id="L9"><span class="lineNum">       9</span>              : ! 2004 WHL: Block structure added</span>
+<span id="L10"><span class="lineNum">      10</span>              : ! 2006 ECH: Accepted some CESM code into mainstream CICE</span>
+<span id="L11"><span class="lineNum">      11</span>              : !           Added ice_present, aicen, vicen; removed aice1...10, vice1...1.</span>
+<span id="L12"><span class="lineNum">      12</span>              : !           Added histfreq_n and histfreq='h' options, removed histfreq='w'</span>
+<span id="L13"><span class="lineNum">      13</span>              : !           Converted to free source form (F90)</span>
+<span id="L14"><span class="lineNum">      14</span>              : !           Added option for binary output instead of netCDF</span>
+<span id="L15"><span class="lineNum">      15</span>              : ! 2009 D Bailey and ECH: Generalized for multiple frequency output</span>
+<span id="L16"><span class="lineNum">      16</span>              : ! 2010 Alison McLaren and ECH: Added 3D capability</span>
+<span id="L17"><span class="lineNum">      17</span>              : ! 2013 ECH split from ice_history.F90</span>
+<span id="L18"><span class="lineNum">      18</span>              : </span>
+<span id="L19"><span class="lineNum">      19</span>              :       module ice_history_write</span>
+<span id="L20"><span class="lineNum">      20</span>              : </span>
+<span id="L21"><span class="lineNum">      21</span>              :       use ice_fileunits, only: nu_history, nu_hdr, nu_diag</span>
+<span id="L22"><span class="lineNum">      22</span>              :       use ice_exit, only: abort_ice</span>
+<span id="L23"><span class="lineNum">      23</span>              :       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted</span>
+<span id="L24"><span class="lineNum">      24</span>              : </span>
+<span id="L25"><span class="lineNum">      25</span>              :       implicit none</span>
+<span id="L26"><span class="lineNum">      26</span>              :       private</span>
+<span id="L27"><span class="lineNum">      27</span>              :       public :: ice_write_hist</span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span>              : !=======================================================================</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span>              :       contains</span>
+<span id="L32"><span class="lineNum">      32</span>              : </span>
+<span id="L33"><span class="lineNum">      33</span>              : !=======================================================================</span>
+<span id="L34"><span class="lineNum">      34</span>              : !</span>
+<span id="L35"><span class="lineNum">      35</span>              : ! write binary history file</span>
+<span id="L36"><span class="lineNum">      36</span>              : !</span>
+<span id="L37"><span class="lineNum">      37</span>              : ! This routine writes fewer grid variables compared with the netcdf</span>
+<span id="L38"><span class="lineNum">      38</span>              : ! version, to reduce file size.  Grid variables can be obtained from</span>
+<span id="L39"><span class="lineNum">      39</span>              : ! the original grid input files.</span>
+<span id="L40"><span class="lineNum">      40</span>              : !</span>
+<span id="L41"><span class="lineNum">      41</span>              : ! authors:   E.C.Hunke, LANL</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC tlaBgGNC">       18770 :       subroutine ice_write_hist(ns)</span></span>
+<span id="L44"><span class="lineNum">      44</span>              : </span>
+<span id="L45"><span class="lineNum">      45</span>              :       use ice_kinds_mod</span>
+<span id="L46"><span class="lineNum">      46</span>              :       use ice_calendar, only: write_ic, dayyr, histfreq, use_leap_years</span>
+<span id="L47"><span class="lineNum">      47</span>              :       use ice_communicate, only: my_task, master_task</span>
+<span id="L48"><span class="lineNum">      48</span>              :       use ice_constants, only: spval</span>
+<span id="L49"><span class="lineNum">      49</span>              :       use ice_domain_size, only: nx_global, ny_global, max_nstrm</span>
+<span id="L50"><span class="lineNum">      50</span>              :       use ice_read_write, only: ice_open, ice_write</span>
+<span id="L51"><span class="lineNum">      51</span>              :       use ice_grid, only: tarea</span>
+<span id="L52"><span class="lineNum">      52</span>              :       use ice_history_shared</span>
+<span id="L53"><span class="lineNum">      53</span>              :       use ice_restart_shared, only: lenstr, runid</span>
+<span id="L54"><span class="lineNum">      54</span>              : </span>
+<span id="L55"><span class="lineNum">      55</span>              :       integer (kind=int_kind), intent(in) :: ns</span>
+<span id="L56"><span class="lineNum">      56</span>              : </span>
+<span id="L57"><span class="lineNum">      57</span>              :       ! local variables</span>
+<span id="L58"><span class="lineNum">      58</span>              : </span>
+<span id="L59"><span class="lineNum">      59</span>              :       integer (kind=int_kind) :: k,n,nn,nrec,nbits</span>
+<span id="L60"><span class="lineNum">      60</span>              :       character (char_len) :: title</span>
+<span id="L61"><span class="lineNum">      61</span>              :       character (char_len_long) :: ncfile, hdrfile</span>
+<span id="L62"><span class="lineNum">      62</span>              : </span>
+<span id="L63"><span class="lineNum">      63</span>              :       integer (kind=int_kind) :: icategory,i_aice</span>
+<span id="L64"><span class="lineNum">      64</span>              : </span>
+<span id="L65"><span class="lineNum">      65</span>              :       character (len=4) :: &amp;</span>
+<span id="L66"><span class="lineNum">      66</span>              :            atype             ! format for output array</span>
+<span id="L67"><span class="lineNum">      67</span>              :                              ! (real/integer, 4-byte/8-byte)</span>
+<span id="L68"><span class="lineNum">      68</span>              : </span>
+<span id="L69"><span class="lineNum">      69</span>              :       character (char_len) :: current_date,current_time</span>
+<span id="L70"><span class="lineNum">      70</span>              :       character (len=16) :: c_aice</span>
+<span id="L71"><span class="lineNum">      71</span>              :       logical (kind=log_kind) :: diag</span>
+<span id="L72"><span class="lineNum">      72</span>              : </span>
+<span id="L73"><span class="lineNum">      73</span>              :       character(len=*), parameter :: subname = '(ice_write_hist)'</span>
+<span id="L74"><span class="lineNum">      74</span>              : </span>
+<span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">       18770 :       diag = .false.</span></span>
+<span id="L76"><span class="lineNum">      76</span>              : </span>
+<span id="L77"><span class="lineNum">      77</span>              :       ! single precision</span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">       18770 :       atype = 'rda4'</span></span>
+<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">       18770 :       nbits = 32</span></span>
+<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">       18770 :       if (history_precision == 8) then</span></span>
+<span id="L81"><span class="lineNum">      81</span>              :          ! double precision</span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">       13038 :          atype = 'rda8'</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">       13038 :          nbits = 64</span></span>
+<span id="L84"><span class="lineNum">      84</span>              :       endif</span>
+<span id="L85"><span class="lineNum">      85</span>              : </span>
+<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">       18770 :       if (my_task == master_task) then</span></span>
+<span id="L87"><span class="lineNum">      87</span>              : </span>
+<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">        1592 :         call construct_filename(ncfile,'da',ns)</span></span>
+<span id="L89"><span class="lineNum">      89</span>              : </span>
+<span id="L90"><span class="lineNum">      90</span>              :         ! add local directory path name to ncfile</span>
+<span id="L91"><span class="lineNum">      91</span> <span class="tlaGNC">        1592 :         if (write_ic) then</span></span>
+<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">          22 :           ncfile = trim(incond_dir)//ncfile</span></span>
+<span id="L93"><span class="lineNum">      93</span>              :         else</span>
+<span id="L94"><span class="lineNum">      94</span> <span class="tlaGNC">        1570 :           ncfile = trim(history_dir)//ncfile</span></span>
+<span id="L95"><span class="lineNum">      95</span>              :         endif</span>
+<span id="L96"><span class="lineNum">      96</span> <span class="tlaGNC">        1592 :         hdrfile = trim(ncfile)//'.hdr'</span></span>
+<span id="L97"><span class="lineNum">      97</span>              : </span>
+<span id="L98"><span class="lineNum">      98</span>              :         !-----------------------------------------------------------------</span>
+<span id="L99"><span class="lineNum">      99</span>              :         ! create history files</span>
+<span id="L100"><span class="lineNum">     100</span>              :         !-----------------------------------------------------------------</span>
+<span id="L101"><span class="lineNum">     101</span> <span class="tlaGNC">        1592 :         call ice_open(nu_history, ncfile, nbits) ! direct access</span></span>
+<span id="L102"><span class="lineNum">     102</span> <span class="tlaGNC">        1592 :         open(nu_hdr,file=hdrfile,form='formatted',status='unknown') ! ascii</span></span>
+<span id="L103"><span class="lineNum">     103</span>              : </span>
+<span id="L104"><span class="lineNum">     104</span> <span class="tlaGNC">        1592 :         title  = 'sea ice model: CICE'</span></span>
+<span id="L105"><span class="lineNum">     105</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 999) 'source',title,' '</span></span>
+<span id="L106"><span class="lineNum">     106</span>              : </span>
+<span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 999) 'file name contains model date',trim(ncfile),' '</span></span>
+<span id="L108"><span class="lineNum">     108</span>              : #ifdef CESMCOUPLED</span>
+<span id="L109"><span class="lineNum">     109</span>              :         write (nu_hdr, 999) 'runid',runid,' '</span>
+<span id="L110"><span class="lineNum">     110</span>              : #endif</span>
+<span id="L111"><span class="lineNum">     111</span> <span class="tlaGNC">        1592 :         if (use_leap_years) then</span></span>
+<span id="L112"><span class="lineNum">     112</span> <span class="tlaUNC tlaBgUNC">           0 :            write (nu_hdr, 999) 'calendar','Gregorian',' '</span></span>
+<span id="L113"><span class="lineNum">     113</span> <span class="tlaUNC">           0 :            write (title,'(a,i3,a)') 'This year has ',int(dayyr),' days'</span></span>
+<span id="L114"><span class="lineNum">     114</span>              :         else</span>
+<span id="L115"><span class="lineNum">     115</span> <span class="tlaGNC tlaBgGNC">        1592 :            write (nu_hdr, 999) 'calendar','noleap',' '</span></span>
+<span id="L116"><span class="lineNum">     116</span> <span class="tlaGNC">        1592 :            write (title,'(a,i3,a)') 'All years have exactly ',int(dayyr),' days'</span></span>
+<span id="L117"><span class="lineNum">     117</span>              :         end if</span>
+<span id="L118"><span class="lineNum">     118</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 999) 'comment',title,' '</span></span>
+<span id="L119"><span class="lineNum">     119</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 999) 'conventions','CICE',' '</span></span>
+<span id="L120"><span class="lineNum">     120</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 997) 'missing_value',spval</span></span>
+<span id="L121"><span class="lineNum">     121</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 997) '_FillValue',spval</span></span>
+<span id="L122"><span class="lineNum">     122</span>              : </span>
+<span id="L123"><span class="lineNum">     123</span> <span class="tlaGNC">        1592 :         call date_and_time(date=current_date, time=current_time)</span></span>
+<span id="L124"><span class="lineNum">     124</span> <span class="tlaGNC">        1592 :         write (nu_hdr,1000) current_date(1:4), current_date(5:6), &amp;</span></span>
+<span id="L125"><span class="lineNum">     125</span> <span class="tlaGNC">        1592 :                             current_date(7:8), current_time(1:2), &amp;   ! LCOV_EXCL_LINE</span></span>
+<span id="L126"><span class="lineNum">     126</span> <span class="tlaGNC">        3184 :                             current_time(3:4), current_time(5:8)</span></span>
+<span id="L127"><span class="lineNum">     127</span> <span class="tlaGNC">        1592 :         write (nu_hdr, *  ) ' '</span></span>
+<span id="L128"><span class="lineNum">     128</span> <span class="tlaGNC">        1592 :         write (nu_hdr, *  ) 'Grid size:'</span></span>
+<span id="L129"><span class="lineNum">     129</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 998) '  ni',nx_global</span></span>
+<span id="L130"><span class="lineNum">     130</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 998) '  nj',ny_global</span></span>
+<span id="L131"><span class="lineNum">     131</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 998) '  nk',nzilyr</span></span>
+<span id="L132"><span class="lineNum">     132</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 998) '  nc',ncat_hist</span></span>
+<span id="L133"><span class="lineNum">     133</span>              : </span>
+<span id="L134"><span class="lineNum">     134</span> <span class="tlaGNC">        1592 :         write (nu_hdr, *  ) 'Grid variables: (left column = nrec)'</span></span>
+<span id="L135"><span class="lineNum">     135</span> <span class="tlaGNC">        1592 :         nrec = 1</span></span>
+<span id="L136"><span class="lineNum">     136</span> <span class="tlaGNC">        1592 :         write (nu_hdr, 996) nrec,'tarea','area of T grid cells','m^2'</span></span>
+<span id="L137"><span class="lineNum">     137</span> <span class="tlaGNC">        1592 :         write (nu_hdr, *  ) 'History variables: (left column = nrec)'</span></span>
+<span id="L138"><span class="lineNum">     138</span>              :       endif  ! my_task = master_task</span>
+<span id="L139"><span class="lineNum">     139</span> <span class="tlaGNC">       18770 :       call ice_write(nu_history, nrec, tarea, atype, diag)</span></span>
+<span id="L140"><span class="lineNum">     140</span>              : </span>
+<span id="L141"><span class="lineNum">     141</span> <span class="tlaGNC">     6006364 :       do n=1,num_avail_hist_fields_2D</span></span>
+<span id="L142"><span class="lineNum">     142</span> <span class="tlaGNC">     6006364 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L143"><span class="lineNum">     143</span>              : </span>
+<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC">      200790 :           nrec = nrec + 1</span></span>
+<span id="L145"><span class="lineNum">     145</span> <span class="tlaGNC">      200790 :           if (my_task == master_task) then</span></span>
+<span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">       17022 :             write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L147"><span class="lineNum">     147</span> <span class="tlaGNC">       34044 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit)</span></span>
+<span id="L148"><span class="lineNum">     148</span>              : </span>
+<span id="L149"><span class="lineNum">     149</span>              :             ! Append ice thickness range to aicen comments</span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaGNC">       17022 :             c_aice = TRIM(avail_hist_fields(n)%vname)</span></span>
+<span id="L151"><span class="lineNum">     151</span> <span class="tlaGNC">       17022 :             i_aice = lenstr(c_aice)</span></span>
+<span id="L152"><span class="lineNum">     152</span> <span class="tlaGNC">       17022 :             if (i_aice &gt; 4 .and. c_aice(1:5) == 'aicen') then</span></span>
+<span id="L153"><span class="lineNum">     153</span> <span class="tlaUNC tlaBgUNC">           0 :               read(c_aice(6:9), '(i3)') icategory</span></span>
+<span id="L154"><span class="lineNum">     154</span>              : !             avail_hist_fields(n)%vcomment = &amp;</span>
+<span id="L155"><span class="lineNum">     155</span>              : !                'Ice range: '//c_hi_range(icategory)</span>
+<span id="L156"><span class="lineNum">     156</span>              :             endif</span>
+<span id="L157"><span class="lineNum">     157</span> <span class="tlaGNC tlaBgGNC">       17022 :             write (nu_hdr, 995) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaGNC">       34044 :                trim(avail_hist_fields(n)%vcomment)</span></span>
+<span id="L159"><span class="lineNum">     159</span>              : </span>
+<span id="L160"><span class="lineNum">     160</span>              :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns)     &amp;</span>
+<span id="L161"><span class="lineNum">     161</span>              :                 .or. write_ic                                   &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L162"><span class="lineNum">     162</span>              :                 .or. n==n_divu(ns)      .or. n==n_shear(ns)     &amp;  ! snapshots   ! LCOV_EXCL_LINE</span>
+<span id="L163"><span class="lineNum">     163</span>              :                 .or. n==n_vort(ns)                              &amp;  ! snapshots   ! LCOV_EXCL_LINE</span>
+<span id="L164"><span class="lineNum">     164</span>              :                 .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L165"><span class="lineNum">     165</span>              :                 .or. n==n_sigP(ns)      .or. n==n_trsig(ns)     &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L166"><span class="lineNum">     166</span>              :                 .or. n==n_sistreave(ns) .or. n==n_sistremax(ns) &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L167"><span class="lineNum">     167</span>              :                 .or. n==n_mlt_onset(ns) .or. n==n_frz_onset(ns) &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L168"><span class="lineNum">     168</span> <span class="tlaGNC">       17022 :                 .or. n==n_hisnap(ns)    .or. n==n_aisnap(ns)) then</span></span>
+<span id="L169"><span class="lineNum">     169</span> <span class="tlaGNC">        7508 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L170"><span class="lineNum">     170</span> <span class="tlaGNC">       15016 :                   'time_rep','instantaneous'</span></span>
+<span id="L171"><span class="lineNum">     171</span>              :             else</span>
+<span id="L172"><span class="lineNum">     172</span> <span class="tlaGNC">        9514 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L173"><span class="lineNum">     173</span> <span class="tlaGNC">       19028 :                   'time_rep','averaged'</span></span>
+<span id="L174"><span class="lineNum">     174</span>              :             endif</span>
+<span id="L175"><span class="lineNum">     175</span>              :           endif</span>
+<span id="L176"><span class="lineNum">     176</span>              : </span>
+<span id="L177"><span class="lineNum">     177</span> <span class="tlaGNC">      200790 :           call ice_write(nu_history, nrec, a2D(:,:,n,:), atype, diag)</span></span>
+<span id="L178"><span class="lineNum">     178</span>              : </span>
+<span id="L179"><span class="lineNum">     179</span>              :         endif</span>
+<span id="L180"><span class="lineNum">     180</span>              :       enddo ! num_avail_hist_fields_2D</span>
+<span id="L181"><span class="lineNum">     181</span>              : </span>
+<span id="L182"><span class="lineNum">     182</span> <span class="tlaGNC">      937790 :       do n = n2D + 1, n3Dccum</span></span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaGNC">      937790 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L184"><span class="lineNum">     184</span>              : </span>
+<span id="L185"><span class="lineNum">     185</span> <span class="tlaGNC">      142968 :           do nn = 1, ncat_hist</span></span>
+<span id="L186"><span class="lineNum">     186</span> <span class="tlaGNC">      118138 :           nrec = nrec + 1</span></span>
+<span id="L187"><span class="lineNum">     187</span> <span class="tlaGNC">      118138 :           if (my_task == master_task) then</span></span>
+<span id="L188"><span class="lineNum">     188</span> <span class="tlaGNC">       10023 :             write (nu_hdr, 994) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">       20046 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn</span></span>
+<span id="L190"><span class="lineNum">     190</span>              : </span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">       10023 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">        3331 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L193"><span class="lineNum">     193</span> <span class="tlaGNC">        6662 :                   'time_rep','instantaneous'</span></span>
+<span id="L194"><span class="lineNum">     194</span>              :             else</span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">        6692 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">       13384 :                   'time_rep','averaged'</span></span>
+<span id="L197"><span class="lineNum">     197</span>              :             endif</span>
+<span id="L198"><span class="lineNum">     198</span>              :           endif</span>
+<span id="L199"><span class="lineNum">     199</span>              : </span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">      142968 :           call ice_write(nu_history, nrec, a3Dc(:,:,nn,n-n2D,:), atype, diag)</span></span>
+<span id="L201"><span class="lineNum">     201</span>              :           enddo ! ncat</span>
+<span id="L202"><span class="lineNum">     202</span>              : </span>
+<span id="L203"><span class="lineNum">     203</span>              :         endif</span>
+<span id="L204"><span class="lineNum">     204</span>              :       enddo ! num_avail_hist_fields_3Dc</span>
+<span id="L205"><span class="lineNum">     205</span>              : </span>
+<span id="L206"><span class="lineNum">     206</span> <span class="tlaGNC">       18770 :       do n = n3Dccum + 1, n3Dzcum</span></span>
+<span id="L207"><span class="lineNum">     207</span> <span class="tlaGNC">       18770 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L208"><span class="lineNum">     208</span>              : </span>
+<span id="L209"><span class="lineNum">     209</span> <span class="tlaUNC tlaBgUNC">           0 :           do k = 1, nzilyr</span></span>
+<span id="L210"><span class="lineNum">     210</span> <span class="tlaUNC">           0 :           nrec = nrec + 1</span></span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaUNC">           0 :           if (my_task == master_task) then</span></span>
+<span id="L212"><span class="lineNum">     212</span> <span class="tlaUNC">           0 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L213"><span class="lineNum">     213</span> <span class="tlaUNC">           0 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),k</span></span>
+<span id="L214"><span class="lineNum">     214</span>              : </span>
+<span id="L215"><span class="lineNum">     215</span> <span class="tlaUNC">           0 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L216"><span class="lineNum">     216</span> <span class="tlaUNC">           0 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L217"><span class="lineNum">     217</span> <span class="tlaUNC">           0 :                   'time_rep','instantaneous'</span></span>
+<span id="L218"><span class="lineNum">     218</span>              :             else</span>
+<span id="L219"><span class="lineNum">     219</span> <span class="tlaUNC">           0 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L220"><span class="lineNum">     220</span> <span class="tlaUNC">           0 :                   'time_rep','averaged'</span></span>
+<span id="L221"><span class="lineNum">     221</span>              :             endif</span>
+<span id="L222"><span class="lineNum">     222</span>              :           endif</span>
+<span id="L223"><span class="lineNum">     223</span>              : </span>
+<span id="L224"><span class="lineNum">     224</span> <span class="tlaUNC">           0 :           call ice_write(nu_history, nrec, a3Dz(:,:,k,n-n3Dccum,:), atype, diag)</span></span>
+<span id="L225"><span class="lineNum">     225</span>              :           enddo ! nzilyr</span>
+<span id="L226"><span class="lineNum">     226</span>              : </span>
+<span id="L227"><span class="lineNum">     227</span>              :         endif</span>
+<span id="L228"><span class="lineNum">     228</span>              :       enddo ! num_avail_hist_fields_3Dz</span>
+<span id="L229"><span class="lineNum">     229</span>              : </span>
+<span id="L230"><span class="lineNum">     230</span> <span class="tlaGNC tlaBgGNC">       44210 :       do n = n3Dzcum + 1, n3Dbcum</span></span>
+<span id="L231"><span class="lineNum">     231</span> <span class="tlaGNC">       44210 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L232"><span class="lineNum">     232</span>              : </span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">        5760 :           do k = 1, nzilyr</span></span>
+<span id="L234"><span class="lineNum">     234</span> <span class="tlaGNC">        5040 :           nrec = nrec + 1</span></span>
+<span id="L235"><span class="lineNum">     235</span> <span class="tlaGNC">        5040 :           if (my_task == master_task) then</span></span>
+<span id="L236"><span class="lineNum">     236</span> <span class="tlaGNC">         315 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L237"><span class="lineNum">     237</span> <span class="tlaGNC">         630 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L238"><span class="lineNum">     238</span>              : </span>
+<span id="L239"><span class="lineNum">     239</span> <span class="tlaGNC">         315 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L240"><span class="lineNum">     240</span> <span class="tlaGNC">          70 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L241"><span class="lineNum">     241</span> <span class="tlaGNC">         140 :                   'time_rep','instantaneous'</span></span>
+<span id="L242"><span class="lineNum">     242</span>              :             else</span>
+<span id="L243"><span class="lineNum">     243</span> <span class="tlaGNC">         245 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L244"><span class="lineNum">     244</span> <span class="tlaGNC">         490 :                   'time_rep','averaged'</span></span>
+<span id="L245"><span class="lineNum">     245</span>              :             endif</span>
+<span id="L246"><span class="lineNum">     246</span>              :           endif</span>
+<span id="L247"><span class="lineNum">     247</span>              : </span>
+<span id="L248"><span class="lineNum">     248</span> <span class="tlaGNC">        5760 :           call ice_write(nu_history, nrec, a3Db(:,:,k,n-n3Dzcum,:), atype, diag)</span></span>
+<span id="L249"><span class="lineNum">     249</span>              :           enddo ! nzilyr</span>
+<span id="L250"><span class="lineNum">     250</span>              : </span>
+<span id="L251"><span class="lineNum">     251</span>              :         endif</span>
+<span id="L252"><span class="lineNum">     252</span>              :       enddo ! num_avail_hist_fields_3Db</span>
+<span id="L253"><span class="lineNum">     253</span>              : </span>
+<span id="L254"><span class="lineNum">     254</span> <span class="tlaGNC">       34034 :       do n = n3Dbcum + 1, n3Dacum</span></span>
+<span id="L255"><span class="lineNum">     255</span> <span class="tlaGNC">       34034 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L256"><span class="lineNum">     256</span>              : </span>
+<span id="L257"><span class="lineNum">     257</span> <span class="tlaGNC">        3456 :           do k = 1, nzilyr</span></span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">        3024 :           nrec = nrec + 1</span></span>
+<span id="L259"><span class="lineNum">     259</span> <span class="tlaGNC">        3024 :           if (my_task == master_task) then</span></span>
+<span id="L260"><span class="lineNum">     260</span> <span class="tlaGNC">         189 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L261"><span class="lineNum">     261</span> <span class="tlaGNC">         378 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L262"><span class="lineNum">     262</span>              : </span>
+<span id="L263"><span class="lineNum">     263</span> <span class="tlaGNC">         189 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">          42 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaGNC">          84 :                   'time_rep','instantaneous'</span></span>
+<span id="L266"><span class="lineNum">     266</span>              :             else</span>
+<span id="L267"><span class="lineNum">     267</span> <span class="tlaGNC">         147 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L268"><span class="lineNum">     268</span> <span class="tlaGNC">         294 :                   'time_rep','averaged'</span></span>
+<span id="L269"><span class="lineNum">     269</span>              :             endif</span>
+<span id="L270"><span class="lineNum">     270</span>              :           endif</span>
+<span id="L271"><span class="lineNum">     271</span>              : </span>
+<span id="L272"><span class="lineNum">     272</span> <span class="tlaGNC">        3456 :           call ice_write(nu_history, nrec, a3Da(:,:,k,n-n3Dbcum,:), atype, diag)</span></span>
+<span id="L273"><span class="lineNum">     273</span>              :           enddo ! nzilyr</span>
+<span id="L274"><span class="lineNum">     274</span>              : </span>
+<span id="L275"><span class="lineNum">     275</span>              :         endif</span>
+<span id="L276"><span class="lineNum">     276</span>              :       enddo ! num_avail_hist_fields_3Da</span>
+<span id="L277"><span class="lineNum">     277</span>              : </span>
+<span id="L278"><span class="lineNum">     278</span> <span class="tlaGNC">       49298 :       do n = n3Dacum + 1, n3Dfcum</span></span>
+<span id="L279"><span class="lineNum">     279</span> <span class="tlaGNC">       49298 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L280"><span class="lineNum">     280</span>              : </span>
+<span id="L281"><span class="lineNum">     281</span> <span class="tlaGNC">       11232 :           do k = 1, nfsd_hist</span></span>
+<span id="L282"><span class="lineNum">     282</span> <span class="tlaGNC">       10368 :           nrec = nrec + 1</span></span>
+<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">       10368 :           if (my_task == master_task) then</span></span>
+<span id="L284"><span class="lineNum">     284</span> <span class="tlaGNC">         648 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L285"><span class="lineNum">     285</span> <span class="tlaGNC">        1296 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L286"><span class="lineNum">     286</span>              : </span>
+<span id="L287"><span class="lineNum">     287</span> <span class="tlaGNC">         648 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L288"><span class="lineNum">     288</span> <span class="tlaGNC">         144 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L289"><span class="lineNum">     289</span> <span class="tlaGNC">         288 :                   'time_rep','instantaneous'</span></span>
+<span id="L290"><span class="lineNum">     290</span>              :             else</span>
+<span id="L291"><span class="lineNum">     291</span> <span class="tlaGNC">         504 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L292"><span class="lineNum">     292</span> <span class="tlaGNC">        1008 :                   'time_rep','averaged'</span></span>
+<span id="L293"><span class="lineNum">     293</span>              :             endif</span>
+<span id="L294"><span class="lineNum">     294</span>              :           endif</span>
+<span id="L295"><span class="lineNum">     295</span>              : </span>
+<span id="L296"><span class="lineNum">     296</span> <span class="tlaGNC">       11232 :           call ice_write(nu_history, nrec, a3Df(:,:,k,n-n3Dacum,:), atype, diag)</span></span>
+<span id="L297"><span class="lineNum">     297</span>              :           enddo ! nfsd_hist</span>
+<span id="L298"><span class="lineNum">     298</span>              : </span>
+<span id="L299"><span class="lineNum">     299</span>              :         endif</span>
+<span id="L300"><span class="lineNum">     300</span>              :       enddo ! num_avail_hist_fields_3Df</span>
+<span id="L301"><span class="lineNum">     301</span>              : </span>
+<span id="L302"><span class="lineNum">     302</span> <span class="tlaGNC">       93818 :       do n = n3Dfcum + 1, n4Dicum</span></span>
+<span id="L303"><span class="lineNum">     303</span> <span class="tlaGNC">       93818 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L304"><span class="lineNum">     304</span>              : </span>
+<span id="L305"><span class="lineNum">     305</span> <span class="tlaGNC">       12096 :           do nn = 1, ncat_hist</span></span>
+<span id="L306"><span class="lineNum">     306</span> <span class="tlaGNC">       81900 :           do k = 1, nzilyr</span></span>
+<span id="L307"><span class="lineNum">     307</span> <span class="tlaGNC">       69804 :           nrec = nrec + 1</span></span>
+<span id="L308"><span class="lineNum">     308</span> <span class="tlaGNC">       69804 :           if (my_task == master_task) then</span></span>
+<span id="L309"><span class="lineNum">     309</span> <span class="tlaGNC">        6048 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L310"><span class="lineNum">     310</span> <span class="tlaGNC">       12096 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L311"><span class="lineNum">     311</span>              : </span>
+<span id="L312"><span class="lineNum">     312</span> <span class="tlaGNC">        6048 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L313"><span class="lineNum">     313</span> <span class="tlaGNC">        1834 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L314"><span class="lineNum">     314</span> <span class="tlaGNC">        3668 :                   'time_rep','instantaneous'</span></span>
+<span id="L315"><span class="lineNum">     315</span>              :             else</span>
+<span id="L316"><span class="lineNum">     316</span> <span class="tlaGNC">        4214 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L317"><span class="lineNum">     317</span> <span class="tlaGNC">        8428 :                   'time_rep','averaged'</span></span>
+<span id="L318"><span class="lineNum">     318</span>              :             endif</span>
+<span id="L319"><span class="lineNum">     319</span>              :           endif</span>
+<span id="L320"><span class="lineNum">     320</span>              : </span>
+<span id="L321"><span class="lineNum">     321</span> <span class="tlaGNC">       79776 :           call ice_write(nu_history, nrec, a4Di(:,:,k,nn,n-n3Dfcum,:), atype, diag)</span></span>
+<span id="L322"><span class="lineNum">     322</span>              :           enddo ! nzilyr</span>
+<span id="L323"><span class="lineNum">     323</span>              :           enddo ! ncat_hist</span>
+<span id="L324"><span class="lineNum">     324</span>              : </span>
+<span id="L325"><span class="lineNum">     325</span>              :         endif</span>
+<span id="L326"><span class="lineNum">     326</span>              :       enddo ! num_avail_hist_fields_4Di</span>
+<span id="L327"><span class="lineNum">     327</span>              : </span>
+<span id="L328"><span class="lineNum">     328</span> <span class="tlaGNC">       56294 :       do n = n4Dicum + 1, n4Dscum</span></span>
+<span id="L329"><span class="lineNum">     329</span> <span class="tlaGNC">       56294 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L330"><span class="lineNum">     330</span>              : </span>
+<span id="L331"><span class="lineNum">     331</span> <span class="tlaGNC">        6048 :           do nn = 1, ncat_hist</span></span>
+<span id="L332"><span class="lineNum">     332</span> <span class="tlaGNC">       12798 :           do k = 1, nzslyr</span></span>
+<span id="L333"><span class="lineNum">     333</span> <span class="tlaGNC">        6750 :           nrec = nrec + 1</span></span>
+<span id="L334"><span class="lineNum">     334</span> <span class="tlaGNC">        6750 :           if (my_task == master_task) then</span></span>
+<span id="L335"><span class="lineNum">     335</span> <span class="tlaGNC">         558 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L336"><span class="lineNum">     336</span> <span class="tlaGNC">        1116 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L337"><span class="lineNum">     337</span>              : </span>
+<span id="L338"><span class="lineNum">     338</span> <span class="tlaGNC">         558 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L339"><span class="lineNum">     339</span> <span class="tlaGNC">         159 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L340"><span class="lineNum">     340</span> <span class="tlaGNC">         318 :                   'time_rep','instantaneous'</span></span>
+<span id="L341"><span class="lineNum">     341</span>              :             else</span>
+<span id="L342"><span class="lineNum">     342</span> <span class="tlaGNC">         399 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L343"><span class="lineNum">     343</span> <span class="tlaGNC">         798 :                   'time_rep','averaged'</span></span>
+<span id="L344"><span class="lineNum">     344</span>              :             endif</span>
+<span id="L345"><span class="lineNum">     345</span>              :           endif</span>
+<span id="L346"><span class="lineNum">     346</span>              : </span>
+<span id="L347"><span class="lineNum">     347</span> <span class="tlaGNC">       11736 :           call ice_write(nu_history, nrec, a4Ds(:,:,k,nn,n-n4Dicum,:), atype, diag)</span></span>
+<span id="L348"><span class="lineNum">     348</span>              :           enddo ! nzslyr</span>
+<span id="L349"><span class="lineNum">     349</span>              :           enddo ! ncat_hist</span>
+<span id="L350"><span class="lineNum">     350</span>              : </span>
+<span id="L351"><span class="lineNum">     351</span>              :         endif</span>
+<span id="L352"><span class="lineNum">     352</span>              :       enddo ! num_avail_hist_fields_4Ds</span>
+<span id="L353"><span class="lineNum">     353</span>              : </span>
+<span id="L354"><span class="lineNum">     354</span> <span class="tlaGNC">       23858 :       do n = n4Dscum + 1, n4Dfcum</span></span>
+<span id="L355"><span class="lineNum">     355</span> <span class="tlaGNC">       23858 :           if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then</span></span>
+<span id="L356"><span class="lineNum">     356</span>              : </span>
+<span id="L357"><span class="lineNum">     357</span> <span class="tlaGNC">         864 :           do nn = 1, ncat_hist</span></span>
+<span id="L358"><span class="lineNum">     358</span> <span class="tlaGNC">        9504 :           do k = 1, nfsd_hist</span></span>
+<span id="L359"><span class="lineNum">     359</span> <span class="tlaGNC">        8640 :           nrec = nrec + 1</span></span>
+<span id="L360"><span class="lineNum">     360</span> <span class="tlaGNC">        8640 :           if (my_task == master_task) then</span></span>
+<span id="L361"><span class="lineNum">     361</span> <span class="tlaGNC">         540 :             write (nu_hdr, 993) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L362"><span class="lineNum">     362</span> <span class="tlaGNC">        1080 :                trim(avail_hist_fields(n)%vdesc),trim(avail_hist_fields(n)%vunit),nn,k</span></span>
+<span id="L363"><span class="lineNum">     363</span>              : </span>
+<span id="L364"><span class="lineNum">     364</span> <span class="tlaGNC">         540 :             if (histfreq(ns) == '1' .or. .not. hist_avg(ns) .or. write_ic) then</span></span>
+<span id="L365"><span class="lineNum">     365</span> <span class="tlaGNC">         120 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L366"><span class="lineNum">     366</span> <span class="tlaGNC">         240 :                   'time_rep','instantaneous'</span></span>
+<span id="L367"><span class="lineNum">     367</span>              :             else</span>
+<span id="L368"><span class="lineNum">     368</span> <span class="tlaGNC">         420 :                write (nu_hdr, 996) nrec,trim(avail_hist_fields(n)%vname), &amp;</span></span>
+<span id="L369"><span class="lineNum">     369</span> <span class="tlaGNC">         840 :                   'time_rep','averaged'</span></span>
+<span id="L370"><span class="lineNum">     370</span>              :             endif</span>
+<span id="L371"><span class="lineNum">     371</span>              :           endif</span>
+<span id="L372"><span class="lineNum">     372</span>              : </span>
+<span id="L373"><span class="lineNum">     373</span> <span class="tlaGNC">        9360 :           call ice_write(nu_history, nrec, a4Df(:,:,k,nn,n-n4Dscum,:), atype, diag)</span></span>
+<span id="L374"><span class="lineNum">     374</span>              :           enddo ! nfsd_hist</span>
+<span id="L375"><span class="lineNum">     375</span>              :           enddo ! ncat_hist</span>
+<span id="L376"><span class="lineNum">     376</span>              : </span>
+<span id="L377"><span class="lineNum">     377</span>              :         endif</span>
+<span id="L378"><span class="lineNum">     378</span>              :       enddo ! num_avail_hist_fields_4Df</span>
+<span id="L379"><span class="lineNum">     379</span>              : </span>
+<span id="L380"><span class="lineNum">     380</span>              : 995     format(i3,2x,a,' comment: ',a)</span>
+<span id="L381"><span class="lineNum">     381</span>              : 996     format(i3,2x,a,': ',a,',',2x,a)</span>
+<span id="L382"><span class="lineNum">     382</span>              : 993     format(i3,2x,a,': ',a,',',2x,a,2x,' cat ',i3,2x,'zlvl ',i3)</span>
+<span id="L383"><span class="lineNum">     383</span>              : 994     format(i3,2x,a,': ',a,',',2x,a,2x,' cat ',i3)</span>
+<span id="L384"><span class="lineNum">     384</span>              : 997     format(a,': ',es13.6)</span>
+<span id="L385"><span class="lineNum">     385</span>              : 998     format(a,': ',i6)</span>
+<span id="L386"><span class="lineNum">     386</span>              : 999     format(a,': ',a,2x,a)</span>
+<span id="L387"><span class="lineNum">     387</span>              : 1000    format('This dataset was created on ', &amp;</span>
+<span id="L388"><span class="lineNum">     388</span>              :                 a,'-',a,'-',a,' at ',a,':',a,':',a)</span>
+<span id="L389"><span class="lineNum">     389</span>              : </span>
+<span id="L390"><span class="lineNum">     390</span> <span class="tlaGNC">       18770 :       if (my_task == master_task) then</span></span>
+<span id="L391"><span class="lineNum">     391</span> <span class="tlaGNC">        1592 :         close (nu_hdr)     ! header file</span></span>
+<span id="L392"><span class="lineNum">     392</span> <span class="tlaGNC">        1592 :         close (nu_history) ! data file</span></span>
+<span id="L393"><span class="lineNum">     393</span> <span class="tlaGNC">        1592 :         write (nu_diag,*) ' '</span></span>
+<span id="L394"><span class="lineNum">     394</span> <span class="tlaGNC">        1592 :         write (nu_diag,*) 'Finished writing ',trim(ncfile)</span></span>
+<span id="L395"><span class="lineNum">     395</span>              :       endif</span>
+<span id="L396"><span class="lineNum">     396</span>              : </span>
+<span id="L397"><span class="lineNum">     397</span> <span class="tlaGNC">       18770 :       end subroutine ice_write_hist</span></span>
+<span id="L398"><span class="lineNum">     398</span>              : </span>
+<span id="L399"><span class="lineNum">     399</span>              : !=======================================================================</span>
+<span id="L400"><span class="lineNum">     400</span>              : </span>
+<span id="L401"><span class="lineNum">     401</span>              :       end module ice_history_write</span>
+<span id="L402"><span class="lineNum">     402</span>              : </span>
+<span id="L403"><span class="lineNum">     403</span>              : !=======================================================================</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../../../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
