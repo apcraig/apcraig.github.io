@@ -1,0 +1,1 @@
+genhtml -o ./lcov_cice_250115-032532:736c1771a8:1:quick --precision 2 -t 250115-032532:736c1771a8:1:quick total.info
