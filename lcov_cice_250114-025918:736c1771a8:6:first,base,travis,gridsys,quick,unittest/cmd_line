@@ -1,1 +1,0 @@
-genhtml -o ./lcov_cice_250114-025918:736c1771a8:6:first,base,travis,gridsys,quick,unittest --precision 2 -t 250114-025918:736c1771a8:6:first,base,travis,gridsys,quick,unittest total.info
