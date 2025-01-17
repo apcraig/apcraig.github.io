@@ -1,0 +1,358 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 250117-002636:bfac934362:12:first,prod,base,travis,decomp,reprosum,io,omp,gridsys,perf,quick,unittest - cicecore/cicedyn/general/ice_state.F90</title>
+  <link rel="stylesheet" type="text/css" href="../../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../../index.html">top level</a> - <a href="index.html">cicecore/cicedyn/general</a> - ice_state.F90<span style="font-size: 80%;"> (source / <a href="ice_state.F90.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">250117-002636:bfac934362:12:first,prod,base,travis,decomp,reprosum,io,omp,gridsys,perf,quick,unittest</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">97.62&nbsp;%</td>
+            <td class="headerCovTableEntry">42</td>
+            <td class="headerCovTableEntry">41</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2025-01-17 06:13:42</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.00&nbsp;%</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+          </tr>
+                  <tr><td><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : !=======================================================================</span>
+<span id="L2"><span class="lineNum">       2</span>              : !</span>
+<span id="L3"><span class="lineNum">       3</span>              : ! Primary state variables in various configurations</span>
+<span id="L4"><span class="lineNum">       4</span>              : ! Note: other state variables are at the end of this...</span>
+<span id="L5"><span class="lineNum">       5</span>              : ! The primary state variable names are:</span>
+<span id="L6"><span class="lineNum">       6</span>              : !-------------------------------------------------------------------</span>
+<span id="L7"><span class="lineNum">       7</span>              : ! for each category   aggregated over     units</span>
+<span id="L8"><span class="lineNum">       8</span>              : !                       categories</span>
+<span id="L9"><span class="lineNum">       9</span>              : !-------------------------------------------------------------------</span>
+<span id="L10"><span class="lineNum">      10</span>              : ! aicen(i,j,n)         aice(i,j)           ---</span>
+<span id="L11"><span class="lineNum">      11</span>              : ! vicen(i,j,n)         vice(i,j)           m</span>
+<span id="L12"><span class="lineNum">      12</span>              : ! vsnon(i,j,n)         vsno(i,j)           m</span>
+<span id="L13"><span class="lineNum">      13</span>              : ! trcrn(i,j,it,n)      trcr(i,j,it)</span>
+<span id="L14"><span class="lineNum">      14</span>              : !</span>
+<span id="L15"><span class="lineNum">      15</span>              : ! Area is dimensionless because aice is the fractional area</span>
+<span id="L16"><span class="lineNum">      16</span>              : ! (normalized so that the sum over all categories, including open</span>
+<span id="L17"><span class="lineNum">      17</span>              : ! water, is 1.0).  That is why vice/vsno have units of m instead of m^3.</span>
+<span id="L18"><span class="lineNum">      18</span>              : !</span>
+<span id="L19"><span class="lineNum">      19</span>              : ! Variable names follow these rules:</span>
+<span id="L20"><span class="lineNum">      20</span>              : !</span>
+<span id="L21"><span class="lineNum">      21</span>              : ! (1) For 3D variables (indices i,j,n), write 'ice' or 'sno' or</span>
+<span id="L22"><span class="lineNum">      22</span>              : !     'sfc' and put an 'n' at the end.</span>
+<span id="L23"><span class="lineNum">      23</span>              : ! (2) For 2D variables (indices i,j) aggregated over all categories,</span>
+<span id="L24"><span class="lineNum">      24</span>              : !     write 'ice' or 'sno' or 'sfc' without the 'n'.</span>
+<span id="L25"><span class="lineNum">      25</span>              : ! (3) For 2D variables (indices i,j) associated with an individual</span>
+<span id="L26"><span class="lineNum">      26</span>              : !     category, write 'i' or 's' instead of 'ice' or 'sno' and put an 'n'</span>
+<span id="L27"><span class="lineNum">      27</span>              : !     at the end: e.g. hin, hsn.  These are not declared here</span>
+<span id="L28"><span class="lineNum">      28</span>              : !     but in individual modules (e.g., icepack_therm_vertical).</span>
+<span id="L29"><span class="lineNum">      29</span>              : !</span>
+<span id="L30"><span class="lineNum">      30</span>              : ! authors C. M. Bitz, UW</span>
+<span id="L31"><span class="lineNum">      31</span>              : !         Elizabeth C. Hunke and William H. Lipscomb, LANL</span>
+<span id="L32"><span class="lineNum">      32</span>              : !</span>
+<span id="L33"><span class="lineNum">      33</span>              : ! 2004: Block structure added by William Lipscomb</span>
+<span id="L34"><span class="lineNum">      34</span>              : ! 2006: Converted to free form source (F90) by Elizabeth Hunke</span>
+<span id="L35"><span class="lineNum">      35</span>              : </span>
+<span id="L36"><span class="lineNum">      36</span>              :       module ice_state</span>
+<span id="L37"><span class="lineNum">      37</span>              : </span>
+<span id="L38"><span class="lineNum">      38</span>              :       use ice_kinds_mod</span>
+<span id="L39"><span class="lineNum">      39</span>              :       use ice_constants, only: field_loc_center, field_type_scalar, c0</span>
+<span id="L40"><span class="lineNum">      40</span>              :       use ice_domain_size, only: max_blocks, ncat</span>
+<span id="L41"><span class="lineNum">      41</span>              :       use ice_blocks, only: nx_block, ny_block</span>
+<span id="L42"><span class="lineNum">      42</span>              :       use ice_exit, only: abort_ice</span>
+<span id="L43"><span class="lineNum">      43</span>              :       use ice_fileunits, only: nu_diag</span>
+<span id="L44"><span class="lineNum">      44</span>              :       use icepack_intfc, only: icepack_query_tracer_sizes</span>
+<span id="L45"><span class="lineNum">      45</span>              :       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted</span>
+<span id="L46"><span class="lineNum">      46</span>              : </span>
+<span id="L47"><span class="lineNum">      47</span>              :       implicit none</span>
+<span id="L48"><span class="lineNum">      48</span>              :       private</span>
+<span id="L49"><span class="lineNum">      49</span>              :       public :: bound_state, alloc_state</span>
+<span id="L50"><span class="lineNum">      50</span>              : </span>
+<span id="L51"><span class="lineNum">      51</span>              :       !-----------------------------------------------------------------</span>
+<span id="L52"><span class="lineNum">      52</span>              :       ! state of the ice aggregated over all categories</span>
+<span id="L53"><span class="lineNum">      53</span>              :       !-----------------------------------------------------------------</span>
+<span id="L54"><span class="lineNum">      54</span>              : </span>
+<span id="L55"><span class="lineNum">      55</span>              :       real (kind=dbl_kind), dimension(:,:,:), allocatable, &amp;</span>
+<span id="L56"><span class="lineNum">      56</span>              :          public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L57"><span class="lineNum">      57</span>              :          aice  , &amp; ! concentration of ice on T grid   ! LCOV_EXCL_LINE</span>
+<span id="L58"><span class="lineNum">      58</span>              :          aiU   , &amp; ! concentration of ice on U grid   ! LCOV_EXCL_LINE</span>
+<span id="L59"><span class="lineNum">      59</span>              :          vice  , &amp; ! volume per unit area of ice          (m)   ! LCOV_EXCL_LINE</span>
+<span id="L60"><span class="lineNum">      60</span>              :          vsno      ! volume per unit area of snow         (m)</span>
+<span id="L61"><span class="lineNum">      61</span>              : </span>
+<span id="L62"><span class="lineNum">      62</span>              :       real (kind=dbl_kind), &amp;</span>
+<span id="L63"><span class="lineNum">      63</span>              :          dimension(:,:,:,:), allocatable, public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L64"><span class="lineNum">      64</span>              :          trcr      ! ice tracers</span>
+<span id="L65"><span class="lineNum">      65</span>              :                    ! 1: surface temperature of ice/snow (C)</span>
+<span id="L66"><span class="lineNum">      66</span>              : </span>
+<span id="L67"><span class="lineNum">      67</span>              :       !-----------------------------------------------------------------</span>
+<span id="L68"><span class="lineNum">      68</span>              :       ! state of the ice for each category</span>
+<span id="L69"><span class="lineNum">      69</span>              :       !-----------------------------------------------------------------</span>
+<span id="L70"><span class="lineNum">      70</span>              : </span>
+<span id="L71"><span class="lineNum">      71</span>              :       real (kind=dbl_kind), dimension (:,:,:), allocatable, &amp;</span>
+<span id="L72"><span class="lineNum">      72</span>              :          public:: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L73"><span class="lineNum">      73</span>              :          aice0     ! concentration of open water</span>
+<span id="L74"><span class="lineNum">      74</span>              : </span>
+<span id="L75"><span class="lineNum">      75</span>              :       real (kind=dbl_kind), &amp;</span>
+<span id="L76"><span class="lineNum">      76</span>              :          dimension (:,:,:,:), allocatable, public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L77"><span class="lineNum">      77</span>              :          aicen , &amp; ! concentration of ice   ! LCOV_EXCL_LINE</span>
+<span id="L78"><span class="lineNum">      78</span>              :          vicen , &amp; ! volume per unit area of ice          (m)   ! LCOV_EXCL_LINE</span>
+<span id="L79"><span class="lineNum">      79</span>              :          vsnon     ! volume per unit area of snow         (m)</span>
+<span id="L80"><span class="lineNum">      80</span>              : </span>
+<span id="L81"><span class="lineNum">      81</span>              :       real (kind=dbl_kind), public, &amp;</span>
+<span id="L82"><span class="lineNum">      82</span>              :          dimension (:,:,:,:,:), allocatable :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L83"><span class="lineNum">      83</span>              :          trcrn     ! tracers</span>
+<span id="L84"><span class="lineNum">      84</span>              :                    ! 1: surface temperature of ice/snow (C)</span>
+<span id="L85"><span class="lineNum">      85</span>              : </span>
+<span id="L86"><span class="lineNum">      86</span>              :       !-----------------------------------------------------------------</span>
+<span id="L87"><span class="lineNum">      87</span>              :       ! tracers infrastructure arrays</span>
+<span id="L88"><span class="lineNum">      88</span>              :       !-----------------------------------------------------------------</span>
+<span id="L89"><span class="lineNum">      89</span>              : </span>
+<span id="L90"><span class="lineNum">      90</span>              :       integer (kind=int_kind), dimension (:), allocatable, public :: &amp;</span>
+<span id="L91"><span class="lineNum">      91</span>              :          trcr_depend   ! = 0 for ice area tracers</span>
+<span id="L92"><span class="lineNum">      92</span>              :                        ! = 1 for ice volume tracers</span>
+<span id="L93"><span class="lineNum">      93</span>              :                        ! = 2 for snow volume tracers</span>
+<span id="L94"><span class="lineNum">      94</span>              : </span>
+<span id="L95"><span class="lineNum">      95</span>              :       integer (kind=int_kind), dimension (:), allocatable, public :: &amp;</span>
+<span id="L96"><span class="lineNum">      96</span>              :          n_trcr_strata ! number of underlying tracer layers</span>
+<span id="L97"><span class="lineNum">      97</span>              : </span>
+<span id="L98"><span class="lineNum">      98</span>              :       integer (kind=int_kind), dimension (:,:), allocatable, public :: &amp;</span>
+<span id="L99"><span class="lineNum">      99</span>              :          nt_strata     ! indices of underlying tracer layers</span>
+<span id="L100"><span class="lineNum">     100</span>              : </span>
+<span id="L101"><span class="lineNum">     101</span>              :       real (kind=dbl_kind), dimension (:,:), allocatable, public :: &amp;</span>
+<span id="L102"><span class="lineNum">     102</span>              :          trcr_base     ! = 0 or 1 depending on tracer dependency</span>
+<span id="L103"><span class="lineNum">     103</span>              :                        ! argument 2:  (1) aice, (2) vice, (3) vsno</span>
+<span id="L104"><span class="lineNum">     104</span>              : </span>
+<span id="L105"><span class="lineNum">     105</span>              :       !-----------------------------------------------------------------</span>
+<span id="L106"><span class="lineNum">     106</span>              :       ! dynamic variables closely related to the state of the ice</span>
+<span id="L107"><span class="lineNum">     107</span>              :       !-----------------------------------------------------------------</span>
+<span id="L108"><span class="lineNum">     108</span>              : </span>
+<span id="L109"><span class="lineNum">     109</span>              :       real (kind=dbl_kind), dimension(:,:,:), allocatable, &amp;</span>
+<span id="L110"><span class="lineNum">     110</span>              :          public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L111"><span class="lineNum">     111</span>              :          uvel     , &amp; ! x-component of velocity on U grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L112"><span class="lineNum">     112</span>              :          vvel     , &amp; ! y-component of velocity on U grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L113"><span class="lineNum">     113</span>              :          uvelE    , &amp; ! x-component of velocity on E grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L114"><span class="lineNum">     114</span>              :          vvelE    , &amp; ! y-component of velocity on E grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L115"><span class="lineNum">     115</span>              :          uvelN    , &amp; ! x-component of velocity on N grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L116"><span class="lineNum">     116</span>              :          vvelN    , &amp; ! y-component of velocity on N grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L117"><span class="lineNum">     117</span>              :          divu     , &amp; ! strain rate I component, velocity divergence (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L118"><span class="lineNum">     118</span>              :          shear    , &amp; ! strain rate II component (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L119"><span class="lineNum">     119</span>              :          vort     , &amp; ! vorticity (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L120"><span class="lineNum">     120</span>              :          strength     ! ice strength (N/m)</span>
+<span id="L121"><span class="lineNum">     121</span>              : </span>
+<span id="L122"><span class="lineNum">     122</span>              :       !-----------------------------------------------------------------</span>
+<span id="L123"><span class="lineNum">     123</span>              :       ! ice state at start of time step, saved for later in the step</span>
+<span id="L124"><span class="lineNum">     124</span>              :       !-----------------------------------------------------------------</span>
+<span id="L125"><span class="lineNum">     125</span>              : </span>
+<span id="L126"><span class="lineNum">     126</span>              :       real (kind=dbl_kind), dimension(:,:,:), allocatable, &amp;</span>
+<span id="L127"><span class="lineNum">     127</span>              :          public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L128"><span class="lineNum">     128</span>              :          aice_init       ! initial concentration of ice, for diagnostics</span>
+<span id="L129"><span class="lineNum">     129</span>              : </span>
+<span id="L130"><span class="lineNum">     130</span>              :       real (kind=dbl_kind), &amp;</span>
+<span id="L131"><span class="lineNum">     131</span>              :          dimension(:,:,:,:), allocatable, public :: &amp;   ! LCOV_EXCL_LINE</span>
+<span id="L132"><span class="lineNum">     132</span>              :          aicen_init  , &amp; ! initial ice concentration, for linear ITD   ! LCOV_EXCL_LINE</span>
+<span id="L133"><span class="lineNum">     133</span>              :          vicen_init  , &amp; ! initial ice volume (m), for linear ITD   ! LCOV_EXCL_LINE</span>
+<span id="L134"><span class="lineNum">     134</span>              :          vsnon_init      ! initial snow volume (m), for aerosol</span>
+<span id="L135"><span class="lineNum">     135</span>              : </span>
+<span id="L136"><span class="lineNum">     136</span>              : !=======================================================================</span>
+<span id="L137"><span class="lineNum">     137</span>              : </span>
+<span id="L138"><span class="lineNum">     138</span>              :       contains</span>
+<span id="L139"><span class="lineNum">     139</span>              : </span>
+<span id="L140"><span class="lineNum">     140</span>              : !=======================================================================</span>
+<span id="L141"><span class="lineNum">     141</span>              : !</span>
+<span id="L142"><span class="lineNum">     142</span>              : ! Allocate space for all state variables</span>
+<span id="L143"><span class="lineNum">     143</span>              : !</span>
+<span id="L144"><span class="lineNum">     144</span> <span class="tlaGNC tlaBgGNC">        7139 :       subroutine alloc_state</span></span>
+<span id="L145"><span class="lineNum">     145</span>              :       integer (int_kind) :: ntrcr, ierr</span>
+<span id="L146"><span class="lineNum">     146</span>              :       character(len=*),parameter :: subname='(alloc_state)'</span>
+<span id="L147"><span class="lineNum">     147</span>              : </span>
+<span id="L148"><span class="lineNum">     148</span> <span class="tlaGNC">        7139 :       call icepack_query_tracer_sizes(ntrcr_out=ntrcr)</span></span>
+<span id="L149"><span class="lineNum">     149</span> <span class="tlaGNC">        7139 :       call icepack_warnings_flush(nu_diag)</span></span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaGNC">        7139 :       if (icepack_warnings_aborted()) call abort_ice(error_message=subname, &amp;</span></span>
+<span id="L151"><span class="lineNum">     151</span> <span class="tlaUNC tlaBgUNC">           0 :           file=__FILE__, line=__LINE__)</span></span>
+<span id="L152"><span class="lineNum">     152</span>              : </span>
+<span id="L153"><span class="lineNum">     153</span>              :       allocate ( &amp;</span>
+<span id="L154"><span class="lineNum">     154</span>              :          aice      (nx_block,ny_block,max_blocks) , &amp; ! concentration of ice T grid   ! LCOV_EXCL_LINE</span>
+<span id="L155"><span class="lineNum">     155</span>              :          aiU       (nx_block,ny_block,max_blocks) , &amp; ! concentration of ice U grid   ! LCOV_EXCL_LINE</span>
+<span id="L156"><span class="lineNum">     156</span>              :          vice      (nx_block,ny_block,max_blocks) , &amp; ! volume per unit area of ice (m)   ! LCOV_EXCL_LINE</span>
+<span id="L157"><span class="lineNum">     157</span>              :          vsno      (nx_block,ny_block,max_blocks) , &amp; ! volume per unit area of snow (m)   ! LCOV_EXCL_LINE</span>
+<span id="L158"><span class="lineNum">     158</span>              :          aice0     (nx_block,ny_block,max_blocks) , &amp; ! concentration of open water   ! LCOV_EXCL_LINE</span>
+<span id="L159"><span class="lineNum">     159</span>              :          uvel      (nx_block,ny_block,max_blocks) , &amp; ! x-component of velocity on U grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L160"><span class="lineNum">     160</span>              :          vvel      (nx_block,ny_block,max_blocks) , &amp; ! y-component of velocity on U grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L161"><span class="lineNum">     161</span>              :          uvelE     (nx_block,ny_block,max_blocks) , &amp; ! x-component of velocity on E grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L162"><span class="lineNum">     162</span>              :          vvelE     (nx_block,ny_block,max_blocks) , &amp; ! y-component of velocity on E grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L163"><span class="lineNum">     163</span>              :          uvelN     (nx_block,ny_block,max_blocks) , &amp; ! x-component of velocity on N grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L164"><span class="lineNum">     164</span>              :          vvelN     (nx_block,ny_block,max_blocks) , &amp; ! y-component of velocity on N grid (m/s)   ! LCOV_EXCL_LINE</span>
+<span id="L165"><span class="lineNum">     165</span>              :          divu      (nx_block,ny_block,max_blocks) , &amp; ! strain rate I component, velocity divergence (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L166"><span class="lineNum">     166</span>              :          shear     (nx_block,ny_block,max_blocks) , &amp; ! strain rate II component (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L167"><span class="lineNum">     167</span>              :          vort      (nx_block,ny_block,max_blocks) , &amp; ! vorticity (1/s)   ! LCOV_EXCL_LINE</span>
+<span id="L168"><span class="lineNum">     168</span>              :          strength  (nx_block,ny_block,max_blocks) , &amp; ! ice strength (N/m)   ! LCOV_EXCL_LINE</span>
+<span id="L169"><span class="lineNum">     169</span>              :          aice_init (nx_block,ny_block,max_blocks) , &amp; ! initial concentration of ice, for diagnostics   ! LCOV_EXCL_LINE</span>
+<span id="L170"><span class="lineNum">     170</span>              :          aicen     (nx_block,ny_block,ncat,max_blocks) , &amp; ! concentration of ice   ! LCOV_EXCL_LINE</span>
+<span id="L171"><span class="lineNum">     171</span>              :          vicen     (nx_block,ny_block,ncat,max_blocks) , &amp; ! volume per unit area of ice (m)   ! LCOV_EXCL_LINE</span>
+<span id="L172"><span class="lineNum">     172</span>              :          vsnon     (nx_block,ny_block,ncat,max_blocks) , &amp; ! volume per unit area of snow (m)   ! LCOV_EXCL_LINE</span>
+<span id="L173"><span class="lineNum">     173</span>              :          aicen_init(nx_block,ny_block,ncat,max_blocks) , &amp; ! initial ice concentration, for linear ITD   ! LCOV_EXCL_LINE</span>
+<span id="L174"><span class="lineNum">     174</span>              :          vicen_init(nx_block,ny_block,ncat,max_blocks) , &amp; ! initial ice volume (m), for linear ITD   ! LCOV_EXCL_LINE</span>
+<span id="L175"><span class="lineNum">     175</span>              :          vsnon_init(nx_block,ny_block,ncat,max_blocks) , &amp; ! initial snow volume (m), for aerosol   ! LCOV_EXCL_LINE</span>
+<span id="L176"><span class="lineNum">     176</span>              :          trcr      (nx_block,ny_block,ntrcr,max_blocks) , &amp; ! ice tracers: 1: surface temperature of ice/snow (C)   ! LCOV_EXCL_LINE</span>
+<span id="L177"><span class="lineNum">     177</span>              :          trcrn     (nx_block,ny_block,ntrcr,ncat,max_blocks) , &amp; ! tracers: 1: surface temperature of ice/snow (C)   ! LCOV_EXCL_LINE</span>
+<span id="L178"><span class="lineNum">     178</span> <span class="tlaGNC tlaBgGNC">        7139 :          stat=ierr)</span></span>
+<span id="L179"><span class="lineNum">     179</span> <span class="tlaGNC">        7139 :       if (ierr/=0) call abort_ice('(alloc_state): Out of memory1')</span></span>
+<span id="L180"><span class="lineNum">     180</span>              : </span>
+<span id="L181"><span class="lineNum">     181</span>              :       allocate ( &amp;</span>
+<span id="L182"><span class="lineNum">     182</span>              :          trcr_depend(ntrcr)   , &amp; !   ! LCOV_EXCL_LINE</span>
+<span id="L183"><span class="lineNum">     183</span>              :          n_trcr_strata(ntrcr) , &amp; ! number of underlying tracer layers   ! LCOV_EXCL_LINE</span>
+<span id="L184"><span class="lineNum">     184</span>              :          nt_strata(ntrcr,2)   , &amp; ! indices of underlying tracer layers   ! LCOV_EXCL_LINE</span>
+<span id="L185"><span class="lineNum">     185</span>              :          trcr_base(ntrcr,3)   , &amp; ! = 0 or 1 depending on tracer dependency, (1) aice, (2) vice, (3) vsno   ! LCOV_EXCL_LINE</span>
+<span id="L186"><span class="lineNum">     186</span> <span class="tlaGNC">        7139 :          stat=ierr)</span></span>
+<span id="L187"><span class="lineNum">     187</span> <span class="tlaGNC">        7139 :       if (ierr/=0) call abort_ice('(alloc_state): Out of memory2')</span></span>
+<span id="L188"><span class="lineNum">     188</span>              : </span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">      258408 :       trcr_depend = 0</span></span>
+<span id="L190"><span class="lineNum">     190</span> <span class="tlaGNC">      258408 :       n_trcr_strata = 0</span></span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">      523955 :       nt_strata = 0</span></span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">      782363 :       trcr_base = c0</span></span>
+<span id="L193"><span class="lineNum">     193</span> <span class="tlaGNC">   120851136 :       aicen = c0</span></span>
+<span id="L194"><span class="lineNum">     194</span> <span class="tlaGNC">   120851136 :       aicen_init = c0</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">   120851136 :       vicen = c0</span></span>
+<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">   120851136 :       vicen_init = c0</span></span>
+<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC">   120851136 :       vsnon = c0</span></span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">   120851136 :       vsnon_init = c0</span></span>
+<span id="L199"><span class="lineNum">     199</span>              : </span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">        7139 :       end subroutine alloc_state</span></span>
+<span id="L201"><span class="lineNum">     201</span>              : </span>
+<span id="L202"><span class="lineNum">     202</span>              : !=======================================================================</span>
+<span id="L203"><span class="lineNum">     203</span>              : !</span>
+<span id="L204"><span class="lineNum">     204</span>              : ! Get ghost cell values for ice state variables in each thickness category.</span>
+<span id="L205"><span class="lineNum">     205</span>              : ! NOTE: This subroutine cannot be called from inside a block loop!</span>
+<span id="L206"><span class="lineNum">     206</span>              : !</span>
+<span id="L207"><span class="lineNum">     207</span>              : ! author: William H. Lipscomb, LANL</span>
+<span id="L208"><span class="lineNum">     208</span>              : </span>
+<span id="L209"><span class="lineNum">     209</span> <span class="tlaGNC">    80086163 :       subroutine bound_state (aicen,        &amp;</span></span>
+<span id="L210"><span class="lineNum">     210</span> <span class="tlaGNC">    80086163 :                               vicen, vsnon, &amp;   ! LCOV_EXCL_LINE</span></span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaGNC">    80086163 :                               ntrcr, trcrn)</span></span>
+<span id="L212"><span class="lineNum">     212</span>              : </span>
+<span id="L213"><span class="lineNum">     213</span>              :       use ice_boundary, only: ice_halo, ice_HaloMask, ice_HaloUpdate, &amp;</span>
+<span id="L214"><span class="lineNum">     214</span>              :           ice_HaloDestroy</span>
+<span id="L215"><span class="lineNum">     215</span>              :       use ice_domain, only: halo_info, maskhalo_bound, nblocks</span>
+<span id="L216"><span class="lineNum">     216</span>              : </span>
+<span id="L217"><span class="lineNum">     217</span>              :       integer (kind=int_kind), intent(in) :: &amp;</span>
+<span id="L218"><span class="lineNum">     218</span>              :          ntrcr     ! number of tracers in use</span>
+<span id="L219"><span class="lineNum">     219</span>              : </span>
+<span id="L220"><span class="lineNum">     220</span>              :       real (kind=dbl_kind), dimension(nx_block,ny_block,ncat,max_blocks), intent(inout) :: &amp;</span>
+<span id="L221"><span class="lineNum">     221</span>              :          aicen , &amp; ! fractional ice area   ! LCOV_EXCL_LINE</span>
+<span id="L222"><span class="lineNum">     222</span>              :          vicen , &amp; ! volume per unit area of ice          (m)   ! LCOV_EXCL_LINE</span>
+<span id="L223"><span class="lineNum">     223</span>              :          vsnon     ! volume per unit area of snow         (m)</span>
+<span id="L224"><span class="lineNum">     224</span>              : </span>
+<span id="L225"><span class="lineNum">     225</span>              :       real (kind=dbl_kind), intent(inout), dimension(:,:,:,:,:) :: &amp;  ! (nx_block,ny_block,ntrcr,ncat,max_blocks)</span>
+<span id="L226"><span class="lineNum">     226</span>              :          trcrn     ! ice tracers</span>
+<span id="L227"><span class="lineNum">     227</span>              : </span>
+<span id="L228"><span class="lineNum">     228</span>              :       ! local variables</span>
+<span id="L229"><span class="lineNum">     229</span>              : </span>
+<span id="L230"><span class="lineNum">     230</span>              :       integer (kind=int_kind) :: i, j, n, iblk</span>
+<span id="L231"><span class="lineNum">     231</span>              : </span>
+<span id="L232"><span class="lineNum">     232</span>              :       integer (kind=int_kind), &amp;</span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">   160172326 :          dimension(nx_block,ny_block,max_blocks) :: halomask</span></span>
+<span id="L234"><span class="lineNum">     234</span>              : </span>
+<span id="L235"><span class="lineNum">     235</span>              :       type (ice_halo) :: halo_info_aicemask</span>
+<span id="L236"><span class="lineNum">     236</span>              : </span>
+<span id="L237"><span class="lineNum">     237</span>              :       character(len=*), parameter :: subname = '(bound_state)'</span>
+<span id="L238"><span class="lineNum">     238</span>              : </span>
+<span id="L239"><span class="lineNum">     239</span>              :       call ice_HaloUpdate (aicen,            halo_info, &amp;</span>
+<span id="L240"><span class="lineNum">     240</span> <span class="tlaGNC">    80086163 :                            field_loc_center, field_type_scalar)</span></span>
+<span id="L241"><span class="lineNum">     241</span>              : </span>
+<span id="L242"><span class="lineNum">     242</span> <span class="tlaGNC">    80086163 :       if (maskhalo_bound) then</span></span>
+<span id="L243"><span class="lineNum">     243</span> <span class="tlaGNC"> 65170020321 :          halomask(:,:,:) = 0</span></span>
+<span id="L244"><span class="lineNum">     244</span>              : </span>
+<span id="L245"><span class="lineNum">     245</span> <span class="tlaGNC">    27289976 :          !$OMP PARALLEL DO PRIVATE(iblk,n,i,j)</span></span>
+<span id="L246"><span class="lineNum">     246</span> <span class="tlaGNC">   163681708 :          do iblk = 1, nblocks</span></span>
+<span id="L247"><span class="lineNum">     247</span> <span class="tlaGNC">   883599848 :          do n = 1, ncat</span></span>
+<span id="L248"><span class="lineNum">     248</span> <span class="tlaGNC"> 11244622188 :          do j = 1, ny_block</span></span>
+<span id="L249"><span class="lineNum">     249</span> <span class="tlaGNC"> >14421*10^7 :          do i = 1, nx_block</span></span>
+<span id="L250"><span class="lineNum">     250</span> <span class="tlaGNC"> >14349*10^7 :             if (aicen(i,j,n,iblk) &gt; c0) halomask(i,j,iblk) = 1</span></span>
+<span id="L251"><span class="lineNum">     251</span>              :          enddo</span>
+<span id="L252"><span class="lineNum">     252</span>              :          enddo</span>
+<span id="L253"><span class="lineNum">     253</span>              :          enddo</span>
+<span id="L254"><span class="lineNum">     254</span>              :          enddo</span>
+<span id="L255"><span class="lineNum">     255</span>              :          !$OMP END PARALLEL DO</span>
+<span id="L256"><span class="lineNum">     256</span>              : </span>
+<span id="L257"><span class="lineNum">     257</span> <span class="tlaGNC">    46988056 :          call ice_HaloMask(halo_info_aicemask, halo_info, halomask)</span></span>
+<span id="L258"><span class="lineNum">     258</span>              : </span>
+<span id="L259"><span class="lineNum">     259</span>              :          call ice_HaloUpdate (trcrn(:,:,:,:,:), halo_info_aicemask, &amp;</span>
+<span id="L260"><span class="lineNum">     260</span> <span class="tlaGNC">    46988056 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L261"><span class="lineNum">     261</span>              :          call ice_HaloUpdate (vicen,            halo_info_aicemask, &amp;</span>
+<span id="L262"><span class="lineNum">     262</span> <span class="tlaGNC">    46988056 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L263"><span class="lineNum">     263</span>              :          call ice_HaloUpdate (vsnon,            halo_info_aicemask, &amp;</span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">    46988056 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaGNC">    46988056 :          call ice_HaloDestroy(halo_info_aicemask)</span></span>
+<span id="L266"><span class="lineNum">     266</span>              : </span>
+<span id="L267"><span class="lineNum">     267</span>              :       else</span>
+<span id="L268"><span class="lineNum">     268</span>              :          call ice_HaloUpdate (trcrn(:,:,:,:,:), halo_info, &amp;</span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">    33098107 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L270"><span class="lineNum">     270</span>              :          call ice_HaloUpdate (vicen,            halo_info, &amp;</span>
+<span id="L271"><span class="lineNum">     271</span> <span class="tlaGNC">    33098107 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L272"><span class="lineNum">     272</span>              :          call ice_HaloUpdate (vsnon,            halo_info, &amp;</span>
+<span id="L273"><span class="lineNum">     273</span> <span class="tlaGNC">    33098107 :                               field_loc_center, field_type_scalar)</span></span>
+<span id="L274"><span class="lineNum">     274</span>              :       endif</span>
+<span id="L275"><span class="lineNum">     275</span>              : </span>
+<span id="L276"><span class="lineNum">     276</span> <span class="tlaGNC">    80086163 :       end subroutine bound_state</span></span>
+<span id="L277"><span class="lineNum">     277</span>              : </span>
+<span id="L278"><span class="lineNum">     278</span>              : !=======================================================================</span>
+<span id="L279"><span class="lineNum">     279</span>              : </span>
+<span id="L280"><span class="lineNum">     280</span>              :       end module ice_state</span>
+<span id="L281"><span class="lineNum">     281</span>              : </span>
+<span id="L282"><span class="lineNum">     282</span>              : !=======================================================================</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
