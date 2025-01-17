@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - 250117-002718:9f4b99afd9:4:base,io,travis,quick - configuration/driver/icedrv_forcing_bgc.F90</title>
+  <link rel="stylesheet" type="text/css" href="../../gcov.css">
+</head>
+
+<body>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="title">LCOV - code coverage report</td></tr>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+
+            <tr>
+              <td width="100%">
+                <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="10%" class="headerValue"><a href="../../index.html">top level</a> - <a href="index.html">configuration/driver</a> - icedrv_forcing_bgc.F90<span style="font-size: 80%;"> (source / <a href="icedrv_forcing_bgc.F90.func-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="5%"></td>
+            <td width="5%" class="headerCovTableHead">Coverage</td>
+            <td width="5%" class="headerCovTableHead" title="Covered + Uncovered code">Total</td>
+            <td width="5%" class="headerCovTableHead" title="Exercised code only">Hit</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">250117-002718:9f4b99afd9:4:base,io,travis,quick</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntryHi">98.15&nbsp;%</td>
+            <td class="headerCovTableEntry">54</td>
+            <td class="headerCovTableEntry">53</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test Date:</td>
+            <td class="headerValue">2025-01-16 18:02:43</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntryHi">100.00&nbsp;%</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+          </tr>
+                  <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+          </table>
+
+          <table cellpadding=0 cellspacing=0 border=0>
+            <tr>
+              <td><br></td>
+            </tr>
+            <tr>
+              <td>
+<pre class="sourceHeading">            Line data    Source code</pre>
+<pre class="source">
+<span id="L1"><span class="lineNum">       1</span>              : !=======================================================================</span>
+<span id="L2"><span class="lineNum">       2</span>              : !</span>
+<span id="L3"><span class="lineNum">       3</span>              : ! Reads and interpolates forcing data for biogeochemistry</span>
+<span id="L4"><span class="lineNum">       4</span>              : !</span>
+<span id="L5"><span class="lineNum">       5</span>              : ! authors: Nicole Jeffery, LANL</span>
+<span id="L6"><span class="lineNum">       6</span>              : !          Elizabeth C. Hunke, LANL</span>
+<span id="L7"><span class="lineNum">       7</span>              : !</span>
+<span id="L8"><span class="lineNum">       8</span>              :       module icedrv_forcing_bgc</span>
+<span id="L9"><span class="lineNum">       9</span>              : </span>
+<span id="L10"><span class="lineNum">      10</span>              :       use icedrv_kinds</span>
+<span id="L11"><span class="lineNum">      11</span>              :       use icedrv_domain_size, only: nx</span>
+<span id="L12"><span class="lineNum">      12</span>              :       use icedrv_calendar, only: secday</span>
+<span id="L13"><span class="lineNum">      13</span>              :       use icedrv_constants, only: nu_forcing, nu_diag</span>
+<span id="L14"><span class="lineNum">      14</span>              :       use icepack_intfc, only: icepack_max_algae, icepack_max_doc</span>
+<span id="L15"><span class="lineNum">      15</span>              :       use icepack_intfc, only: icepack_max_dic</span>
+<span id="L16"><span class="lineNum">      16</span>              :       use icepack_intfc, only: icepack_query_tracer_flags</span>
+<span id="L17"><span class="lineNum">      17</span>              :       use icepack_intfc, only: icepack_warnings_flush, icepack_warnings_aborted</span>
+<span id="L18"><span class="lineNum">      18</span>              :       use icedrv_system, only: icedrv_system_abort</span>
+<span id="L19"><span class="lineNum">      19</span>              : </span>
+<span id="L20"><span class="lineNum">      20</span>              :       implicit none</span>
+<span id="L21"><span class="lineNum">      21</span>              :       private</span>
+<span id="L22"><span class="lineNum">      22</span>              :       public :: get_forcing_bgc, faero_default, fiso_default, init_forcing_bgc</span>
+<span id="L23"><span class="lineNum">      23</span>              : </span>
+<span id="L24"><span class="lineNum">      24</span>              :       real (kind=dbl_kind), dimension(365) :: &amp; ! hardwired for now</span>
+<span id="L25"><span class="lineNum">      25</span>              :          sil_data, nit_data</span>
+<span id="L26"><span class="lineNum">      26</span>              : </span>
+<span id="L27"><span class="lineNum">      27</span>              : !=======================================================================</span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span>              :       contains</span>
+<span id="L30"><span class="lineNum">      30</span>              : </span>
+<span id="L31"><span class="lineNum">      31</span>              : !=======================================================================</span>
+<span id="L32"><span class="lineNum">      32</span>              : </span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC tlaBgGNC">           9 :       subroutine init_forcing_bgc</span></span>
+<span id="L34"><span class="lineNum">      34</span>              : </span>
+<span id="L35"><span class="lineNum">      35</span>              :         use icedrv_forcing, only: data_dir, bgc_data_type, bgc_data_file</span>
+<span id="L36"><span class="lineNum">      36</span>              : </span>
+<span id="L37"><span class="lineNum">      37</span>              :         integer (kind=int_kind) :: &amp;</span>
+<span id="L38"><span class="lineNum">      38</span>              :            ntime, &amp;</span>
+<span id="L39"><span class="lineNum">      39</span>              :            i</span>
+<span id="L40"><span class="lineNum">      40</span>              : </span>
+<span id="L41"><span class="lineNum">      41</span>              :         real (kind=dbl_kind), dimension(365) :: &amp;</span>
+<span id="L42"><span class="lineNum">      42</span>              :            sil, &amp;</span>
+<span id="L43"><span class="lineNum">      43</span>              :            nit</span>
+<span id="L44"><span class="lineNum">      44</span>              : </span>
+<span id="L45"><span class="lineNum">      45</span>              :         character (char_len_long) filename</span>
+<span id="L46"><span class="lineNum">      46</span>              : </span>
+<span id="L47"><span class="lineNum">      47</span>              :         character(len=*), parameter :: subname='(init_forcing_bgc)'</span>
+<span id="L48"><span class="lineNum">      48</span>              : </span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           9 :         if (trim(bgc_data_type) == 'ISPOL' .or. &amp;</span></span>
+<span id="L50"><span class="lineNum">      50</span>              :             trim(bgc_data_type) == 'NICE') then</span>
+<span id="L51"><span class="lineNum">      51</span>              : </span>
+<span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">           6 :            if (trim(bgc_data_type) == 'ISPOL') &amp;</span></span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           3 :            filename = trim(data_dir)//'/ISPOL_2004/'//trim(bgc_data_file)</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">           6 :            if (trim(bgc_data_type) == 'NICE') &amp;</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           3 :            filename = trim(data_dir)//'/NICE_2015/'//trim(bgc_data_file)</span></span>
+<span id="L56"><span class="lineNum">      56</span>              : </span>
+<span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           6 :           write (nu_diag,*) 'Reading ',filename</span></span>
+<span id="L58"><span class="lineNum">      58</span>              : </span>
+<span id="L59"><span class="lineNum">      59</span> <span class="tlaGNC">           6 :           ntime = 365 ! daily</span></span>
+<span id="L60"><span class="lineNum">      60</span>              : </span>
+<span id="L61"><span class="lineNum">      61</span> <span class="tlaGNC">           6 :           open (nu_forcing, file=filename, form='formatted')</span></span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">           6 :           read (nu_forcing,*) sil</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">           6 :           read (nu_forcing,*) nit</span></span>
+<span id="L64"><span class="lineNum">      64</span> <span class="tlaGNC">           6 :           close(nu_forcing)</span></span>
+<span id="L65"><span class="lineNum">      65</span>              : </span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">        2196 :           do i = 1, ntime</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">        2190 :              sil_data(i) = sil(i)</span></span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">        2196 :              nit_data(i) = nit(i)</span></span>
+<span id="L69"><span class="lineNum">      69</span>              :           end do</span>
+<span id="L70"><span class="lineNum">      70</span>              : </span>
+<span id="L71"><span class="lineNum">      71</span>              :         end if</span>
+<span id="L72"><span class="lineNum">      72</span>              : </span>
+<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           9 :       end subroutine init_forcing_bgc</span></span>
+<span id="L74"><span class="lineNum">      74</span>              : </span>
+<span id="L75"><span class="lineNum">      75</span>              : !=======================================================================</span>
+<span id="L76"><span class="lineNum">      76</span>              : !</span>
+<span id="L77"><span class="lineNum">      77</span>              : ! Read and interpolate annual climatologies of silicate and nitrate.</span>
+<span id="L78"><span class="lineNum">      78</span>              : ! Restore model quantities to data if desired.</span>
+<span id="L79"><span class="lineNum">      79</span>              : !</span>
+<span id="L80"><span class="lineNum">      80</span>              : ! author: Elizabeth C. Hunke, LANL</span>
+<span id="L81"><span class="lineNum">      81</span>              : </span>
+<span id="L82"><span class="lineNum">      82</span> <span class="tlaGNC">       60693 :       subroutine get_forcing_bgc</span></span>
+<span id="L83"><span class="lineNum">      83</span>              : </span>
+<span id="L84"><span class="lineNum">      84</span>              :       use icedrv_arrays_column, only: ocean_bio_all</span>
+<span id="L85"><span class="lineNum">      85</span>              :       use icedrv_calendar, only:  yday</span>
+<span id="L86"><span class="lineNum">      86</span>              :       use icedrv_flux, only: sil, nit</span>
+<span id="L87"><span class="lineNum">      87</span>              :       use icedrv_forcing, only: interp_coeff, bgc_data_type</span>
+<span id="L88"><span class="lineNum">      88</span>              : </span>
+<span id="L89"><span class="lineNum">      89</span>              :       integer (kind=int_kind) :: &amp;</span>
+<span id="L90"><span class="lineNum">      90</span>              :          i,            &amp; ! horizontal indices</span>
+<span id="L91"><span class="lineNum">      91</span>              :          ixm,ixx,      &amp; ! record numbers for neighboring months</span>
+<span id="L92"><span class="lineNum">      92</span>              :          maxrec      , &amp; ! maximum record number</span>
+<span id="L93"><span class="lineNum">      93</span>              :          recslot     , &amp; ! spline slot for current record</span>
+<span id="L94"><span class="lineNum">      94</span>              :          recnum      , &amp; ! record number</span>
+<span id="L95"><span class="lineNum">      95</span>              :          dataloc     , &amp; ! = 1 for data located in middle of time interval</span>
+<span id="L96"><span class="lineNum">      96</span>              :                          ! = 2 for date located at end of time interval</span>
+<span id="L97"><span class="lineNum">      97</span>              :          ks              ! bgc tracer index (bio_index_o)</span>
+<span id="L98"><span class="lineNum">      98</span>              : </span>
+<span id="L99"><span class="lineNum">      99</span>              :       real (kind=dbl_kind) :: &amp;</span>
+<span id="L100"><span class="lineNum">     100</span>              :           c1intp, c2intp</span>
+<span id="L101"><span class="lineNum">     101</span>              : </span>
+<span id="L102"><span class="lineNum">     102</span>              :       logical (kind=log_kind) :: tr_bgc_Sil, tr_bgc_Nit</span>
+<span id="L103"><span class="lineNum">     103</span>              : </span>
+<span id="L104"><span class="lineNum">     104</span>              :       character(len=*), parameter :: subname='(get_forcing_bgc)'</span>
+<span id="L105"><span class="lineNum">     105</span>              : </span>
+<span id="L106"><span class="lineNum">     106</span> <span class="tlaGNC">       60693 :       call icepack_query_tracer_flags(tr_bgc_Sil_out=tr_bgc_Sil, tr_bgc_Nit_out=tr_bgc_Nit)</span></span>
+<span id="L107"><span class="lineNum">     107</span> <span class="tlaGNC">       60693 :       call icepack_warnings_flush(nu_diag)</span></span>
+<span id="L108"><span class="lineNum">     108</span> <span class="tlaGNC">       60693 :       if (icepack_warnings_aborted()) call icedrv_system_abort(string=subname, &amp;</span></span>
+<span id="L109"><span class="lineNum">     109</span> <span class="tlaUNC tlaBgUNC">           0 :           file=__FILE__,line= __LINE__)</span></span>
+<span id="L110"><span class="lineNum">     110</span>              : </span>
+<span id="L111"><span class="lineNum">     111</span> <span class="tlaGNC tlaBgGNC">       60693 :       if (trim(bgc_data_type) == 'ISPOL' .or. &amp;</span></span>
+<span id="L112"><span class="lineNum">     112</span>              :           trim(bgc_data_type) == 'NICE') then</span>
+<span id="L113"><span class="lineNum">     113</span>              : </span>
+<span id="L114"><span class="lineNum">     114</span> <span class="tlaGNC">       36558 :         dataloc = 2                          ! data located at end of interval</span></span>
+<span id="L115"><span class="lineNum">     115</span> <span class="tlaGNC">       36558 :         maxrec = 365                         !</span></span>
+<span id="L116"><span class="lineNum">     116</span>              : </span>
+<span id="L117"><span class="lineNum">     117</span>              :         ! current record number</span>
+<span id="L118"><span class="lineNum">     118</span> <span class="tlaGNC">       36558 :         recnum = int(yday)</span></span>
+<span id="L119"><span class="lineNum">     119</span>              : </span>
+<span id="L120"><span class="lineNum">     120</span>              :         ! Compute record numbers for surrounding data (2 on each side)</span>
+<span id="L121"><span class="lineNum">     121</span> <span class="tlaGNC">       36558 :         ixm = mod(recnum+maxrec-2,maxrec) + 1</span></span>
+<span id="L122"><span class="lineNum">     122</span> <span class="tlaGNC">       36558 :         ixx = mod(recnum-1,       maxrec) + 1</span></span>
+<span id="L123"><span class="lineNum">     123</span>              : </span>
+<span id="L124"><span class="lineNum">     124</span> <span class="tlaGNC">       36558 :         recslot = 2</span></span>
+<span id="L125"><span class="lineNum">     125</span> <span class="tlaGNC">       36558 :         call interp_coeff (recnum, recslot, secday, dataloc, c1intp, c2intp)</span></span>
+<span id="L126"><span class="lineNum">     126</span>              : </span>
+<span id="L127"><span class="lineNum">     127</span> <span class="tlaGNC">       36558 :         if (tr_bgc_Sil) then</span></span>
+<span id="L128"><span class="lineNum">     128</span> <span class="tlaGNC">      182790 :            sil(:) =  c1intp * sil_data(ixm) + c2intp * sil_data(ixx)</span></span>
+<span id="L129"><span class="lineNum">     129</span>              :         endif</span>
+<span id="L130"><span class="lineNum">     130</span>              : </span>
+<span id="L131"><span class="lineNum">     131</span> <span class="tlaGNC">       36558 :         if (tr_bgc_Nit) then</span></span>
+<span id="L132"><span class="lineNum">     132</span> <span class="tlaGNC">      182790 :            nit(:) =  c1intp * nit_data(ixm) + c2intp * nit_data(ixx)</span></span>
+<span id="L133"><span class="lineNum">     133</span>              :         endif</span>
+<span id="L134"><span class="lineNum">     134</span>              : </span>
+<span id="L135"><span class="lineNum">     135</span> <span class="tlaGNC">      182790 :         do i = 1, nx</span></span>
+<span id="L136"><span class="lineNum">     136</span> <span class="tlaGNC">      146232 :            ks = 2*icepack_max_algae + icepack_max_doc + 3 + icepack_max_dic</span></span>
+<span id="L137"><span class="lineNum">     137</span> <span class="tlaGNC">      146232 :            ocean_bio_all(i,ks) = sil(i)                       ! Sil</span></span>
+<span id="L138"><span class="lineNum">     138</span> <span class="tlaGNC">      146232 :            ks =   icepack_max_algae + 1</span></span>
+<span id="L139"><span class="lineNum">     139</span> <span class="tlaGNC">      146232 :            ocean_bio_all(i,ks) = nit(i)                       ! Nit</span></span>
+<span id="L140"><span class="lineNum">     140</span> <span class="tlaGNC">      146232 :            ks = 2*icepack_max_algae + icepack_max_doc + 7 + icepack_max_dic</span></span>
+<span id="L141"><span class="lineNum">     141</span> <span class="tlaGNC">      182790 :            ocean_bio_all(i,ks) = nit(i)                       ! PON</span></span>
+<span id="L142"><span class="lineNum">     142</span>              :         enddo</span>
+<span id="L143"><span class="lineNum">     143</span>              : </span>
+<span id="L144"><span class="lineNum">     144</span>              :       endif</span>
+<span id="L145"><span class="lineNum">     145</span>              : </span>
+<span id="L146"><span class="lineNum">     146</span> <span class="tlaGNC">       60693 :       end subroutine get_forcing_bgc</span></span>
+<span id="L147"><span class="lineNum">     147</span>              : </span>
+<span id="L148"><span class="lineNum">     148</span>              : !=======================================================================</span>
+<span id="L149"><span class="lineNum">     149</span>              : </span>
+<span id="L150"><span class="lineNum">     150</span>              : ! constant values for atmospheric aerosols</span>
+<span id="L151"><span class="lineNum">     151</span>              : !</span>
+<span id="L152"><span class="lineNum">     152</span>              : ! authors: Elizabeth Hunke, LANL</span>
+<span id="L153"><span class="lineNum">     153</span>              : </span>
+<span id="L154"><span class="lineNum">     154</span> <span class="tlaGNC">       84816 :       subroutine faero_default</span></span>
+<span id="L155"><span class="lineNum">     155</span>              : </span>
+<span id="L156"><span class="lineNum">     156</span>              :       use icedrv_flux, only: faero_atm</span>
+<span id="L157"><span class="lineNum">     157</span>              :       character(len=*), parameter :: subname='(faero_default)'</span>
+<span id="L158"><span class="lineNum">     158</span>              : </span>
+<span id="L159"><span class="lineNum">     159</span> <span class="tlaGNC">      424080 :       faero_atm(:,1) = 1.e-12_dbl_kind ! kg/m^2 s</span></span>
+<span id="L160"><span class="lineNum">     160</span> <span class="tlaGNC">      424080 :       faero_atm(:,2) = 1.e-13_dbl_kind</span></span>
+<span id="L161"><span class="lineNum">     161</span> <span class="tlaGNC">      424080 :       faero_atm(:,3) = 1.e-14_dbl_kind</span></span>
+<span id="L162"><span class="lineNum">     162</span> <span class="tlaGNC">      424080 :       faero_atm(:,4) = 1.e-14_dbl_kind</span></span>
+<span id="L163"><span class="lineNum">     163</span> <span class="tlaGNC">      424080 :       faero_atm(:,5) = 1.e-14_dbl_kind</span></span>
+<span id="L164"><span class="lineNum">     164</span> <span class="tlaGNC">      424080 :       faero_atm(:,6) = 1.e-14_dbl_kind</span></span>
+<span id="L165"><span class="lineNum">     165</span>              : </span>
+<span id="L166"><span class="lineNum">     166</span> <span class="tlaGNC">       84816 :       end subroutine faero_default</span></span>
+<span id="L167"><span class="lineNum">     167</span>              : </span>
+<span id="L168"><span class="lineNum">     168</span>              : !=======================================================================</span>
+<span id="L169"><span class="lineNum">     169</span>              : </span>
+<span id="L170"><span class="lineNum">     170</span>              : ! constant values for atmospheric water isotopes</span>
+<span id="L171"><span class="lineNum">     171</span>              : !</span>
+<span id="L172"><span class="lineNum">     172</span>              : ! authors: Elizabeth Hunke, LANL</span>
+<span id="L173"><span class="lineNum">     173</span>              : </span>
+<span id="L174"><span class="lineNum">     174</span> <span class="tlaGNC">       15372 :       subroutine fiso_default</span></span>
+<span id="L175"><span class="lineNum">     175</span>              : </span>
+<span id="L176"><span class="lineNum">     176</span>              :       use icedrv_flux, only: fiso_atm</span>
+<span id="L177"><span class="lineNum">     177</span>              :       character(len=*), parameter :: subname='(fiso_default)'</span>
+<span id="L178"><span class="lineNum">     178</span>              : </span>
+<span id="L179"><span class="lineNum">     179</span> <span class="tlaGNC">       76860 :       fiso_atm(:,1) = 1.e-12_dbl_kind ! kg/m^2 s</span></span>
+<span id="L180"><span class="lineNum">     180</span> <span class="tlaGNC">       76860 :       fiso_atm(:,2) = 1.e-13_dbl_kind</span></span>
+<span id="L181"><span class="lineNum">     181</span> <span class="tlaGNC">       76860 :       fiso_atm(:,3) = 1.e-14_dbl_kind</span></span>
+<span id="L182"><span class="lineNum">     182</span>              : </span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaGNC">       15372 :       end subroutine fiso_default</span></span>
+<span id="L184"><span class="lineNum">     184</span>              : </span>
+<span id="L185"><span class="lineNum">     185</span>              : !=======================================================================</span>
+<span id="L186"><span class="lineNum">     186</span>              : </span>
+<span id="L187"><span class="lineNum">     187</span>              :       end module icedrv_forcing_bgc</span>
+<span id="L188"><span class="lineNum">     188</span>              : </span>
+<span id="L189"><span class="lineNum">     189</span>              : !=======================================================================</span>
+        </pre>
+              </td>
+            </tr>
+          </table>
+          <br>
+
+          <table width="100%" border=0 cellspacing=0 cellpadding=0>
+            <tr><td class="ruler"><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
+            <tr><td class="versionInfo">Generated by: <a href="https://github.com//linux-test-project/lcov" target="_parent">LCOV version 2.0-1</a></td></tr>
+          </table>
+          <br>
+
+</body>
+</html>
